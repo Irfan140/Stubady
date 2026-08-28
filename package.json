@@ -1,0 +1,28 @@
+{
+  "name": "ai-study-buddy",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "server",
+    "mobile"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "bun run --cwd server tsc --noEmit && bun run --cwd mobile tsc --noEmit",
+    "dev:server": "bun run --cwd server dev",
+    "dev:mobile": "bun run --cwd mobile start"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "eslint": "^9.25.0",
+    "eslint-config-expo": "~55.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.68.0"
+  }
+}

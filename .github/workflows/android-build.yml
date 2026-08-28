@@ -1,0 +1,97 @@
+name: Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Build profile"
+        required: true
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+        default: development
+
+jobs:
+  build:
+    name: Build Android
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK and NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ndk;27.0.11902837
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: bun
+
+      - name: Clean Gradle cache
+        run: |
+          rm -rf ~/.gradle/caches || true
+          rm -rf build || true
+
+      - name: Build Android
+        run: |
+          eas build \
+            --platform android \
+            --profile ${{ inputs.profile }} \
+            --local \
+            --non-interactive
+        env:
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+
+      - name: Upload APK
+        if: inputs.profile != 'production'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ inputs.profile }}
+          path: "mobile/*.apk"
+
+      - name: Upload AAB
+        if: inputs.profile == 'production'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-production
+          path: "mobile/*.aab"

@@ -1,0 +1,141 @@
+// Prisma schema for AI Study Buddy — PostgreSQL with pgvector for RAG embeddings.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+model StudySet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id")
+  title     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  sources       Source[]
+  summaries     Summary[]
+  decks         FlashcardDeck[]
+  conversations Conversation[]
+
+  @@index([userId])
+  @@map("study_sets")
+}
+
+model Source {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id")
+  studySetId     String   @map("study_set_id") @db.Uuid
+  // "pdf" | "note" | "web"
+  type           String
+  content        String?
+  storagePath    String?  @map("storage_path")
+  url            String?
+  fetchedContent String?  @map("fetched_content")
+  // "pending" | "processing" | "ready" | "failed"
+  status         String   @default("pending")
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  studySet StudySet      @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  chunks   SourceChunk[]
+
+  @@index([studySetId, status])
+  @@index([userId])
+  @@map("sources")
+}
+
+model SourceChunk {
+  id         String  @id @default(uuid()) @db.Uuid
+  sourceId   String  @map("source_id") @db.Uuid
+  chunkIndex Int     @map("chunk_index")
+  content    String
+  // text-embedding-3-small produces 1536 dimensions.
+  // Managed via raw SQL (pgvector); see repositories/source-chunks.ts.
+  embedding  Unsupported("vector(1536)")?
+  tokenCount Int     @map("token_count")
+
+  source Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+  @@map("source_chunks")
+}
+
+model Conversation {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id")
+  studySetId String   @map("study_set_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  studySet StudySet  @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  // "user" | "assistant"
+  role           String
+  content        String
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Summary {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id")
+  studySetId    String   @map("study_set_id") @db.Uuid
+  content       String
+  model         String
+  promptVersion String   @map("prompt_version")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  studySet StudySet @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+
+  @@index([studySetId])
+  @@map("summaries")
+}
+
+model FlashcardDeck {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id")
+  studySetId    String   @map("study_set_id") @db.Uuid
+  title         String
+  promptVersion String   @default("flashcards-v1") @map("prompt_version")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  studySet StudySet    @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  cards    Flashcard[]
+
+  @@index([studySetId])
+  @@map("flashcard_decks")
+}
+
+model Flashcard {
+  id        String @id @default(uuid()) @db.Uuid
+  deckId    String @map("deck_id") @db.Uuid
+  front     String
+  back      String
+  sortOrder Int    @map("sort_order")
+
+  deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+  @@map("flashcards")
+}
+
