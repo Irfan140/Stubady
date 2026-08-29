@@ -20,7 +20,11 @@ const loadEnvFileIfExists = (fileName: string): void => {
 };
 
 loadEnvFileIfExists(".env");
-loadEnvFileIfExists(".env.development");
+if (process.env.NODE_ENV === "production") {
+  loadEnvFileIfExists(".env.production");
+} else {
+  loadEnvFileIfExists(".env.development");
+}
 
 const envSchema = z
   .object({
