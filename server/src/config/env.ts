@@ -26,9 +26,8 @@ const envSchema = z
   .object({
     PORT: z.coerce.number().int().positive().default(3001),
 
-    // PostgreSQL (Neon / docker compose / any Postgres connection string)
+    // PostgreSQL (docker compose / Neon / any Postgres connection string)
     DATABASE_URL: z.string().min(1),
-    DIRECT_URL: z.string().min(1),
 
     REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
 
@@ -91,7 +90,6 @@ if (!parsed.success) {
 export const env = {
   port: parsed.data.PORT,
   databaseUrl: parsed.data.DATABASE_URL,
-  directUrl: parsed.data.DIRECT_URL,
   redisUrl: parsed.data.REDIS_URL,
   logLevel: parsed.data.LOG_LEVEL,
   clerkSecretKey: parsed.data.CLERK_SECRET_KEY,

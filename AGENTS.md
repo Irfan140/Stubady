@@ -1,4 +1,4 @@
-# AI Study Buddy — Agent Guide
+# Stubady — Agent Guide
 
 Monorepo with Bun workspaces: `server` (Bun + Express + Prisma + pgvector/Redis/BullMQ/LangChain) and `mobile` (Expo 55 + React Native + Expo Router + Clerk). Root owns shared tooling.
 

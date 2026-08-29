@@ -5,9 +5,6 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    // Unpooled connection used by migrations (required for Neon later;
-    // locally identical to DATABASE_URL).
-    directUrl: env("DIRECT_URL"),
   },
   datasource: {
     url: env("DATABASE_URL"),
