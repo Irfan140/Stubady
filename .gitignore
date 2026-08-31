@@ -1,41 +1,6 @@
-# dependencies
-node_modules
-bun.lock
+# agents skills related folders
+.agent/
+.agents/
+.claude/
+.cursor/
 
-# env — keep only *.example
-.env
-.env.*
-!.env.example
-!.env.development.example
-
-# build / generated
-dist
-generated
-coverage
-.expo
-web-build
-.expo-shared
-server/generated
-server/dist
-server/out
-
-# native
-mobile/android
-mobile/ios
-
-# caches / OS
-.eslintcache
-.cache
-*.tsbuildinfo
-.DS_Store
-.idea
-
-# vercel / expo / agents tooling (do NOT push)
-.agents
-
-# secrets / keys
-*.pem
-*.key
-*.p12
-*.jks
-*.mobileprovision
