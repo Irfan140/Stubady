@@ -1,16 +1,17 @@
 {
   "name": "mobile",
   "main": "expo-router/entry",
+  "type": "module",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint --config ../eslint.config.js .",
-    "lint:fix": "eslint --config ../eslint.config.js . --fix",
-    "format": "prettier --config ../.prettierrc --ignore-path ../.prettierignore --write .",
-    "format:check": "prettier --config ../.prettierrc --ignore-path ../.prettierignore --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "build:dev": "eas build --profile development --platform android",
     "build:dev:github-actions": "eas build --platform android --profile development --local"
   },
@@ -55,9 +56,16 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@eslint/js": "^9.25.0",
     "@tanstack/eslint-plugin-query": "^5.102.5",
     "@types/react": "~19.2.2",
-    "typescript": "~5.9.2"
+    "eslint": "^9.25.0",
+    "eslint-config-expo": "~55.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.68.0"
   },
   "private": true
 }

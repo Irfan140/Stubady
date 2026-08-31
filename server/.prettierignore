@@ -1,6 +1,5 @@
 node_modules
 dist
-.expo
 generated
 coverage
 prisma/migrations
@@ -8,7 +7,5 @@ bun.lock
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
-web-build
-.expo-shared
 .agents
 skills-lock.json

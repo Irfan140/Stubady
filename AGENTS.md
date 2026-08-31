@@ -1,47 +1,54 @@
 # Stubady — Agent Guide
 
-Monorepo with Bun workspaces: `server` (Bun + Express + Prisma + pgvector/Redis/BullMQ/LangChain) and `mobile` (Expo 55 + React Native + Expo Router + Clerk). Root owns shared tooling.
+Independent packages: `server` (Bun + Express + Prisma + pgvector/Redis/BullMQ/LangChain) and `mobile` (Expo 55 + React Native + Expo Router + Clerk). No Bun workspaces — each folder is standalone.
 
-## Workspaces
+## Project Structure — Independent Packages (No Bun Workspaces)
 
 ```
 Ai-Study-Buddy/
-├── server/   # Bun API — src/index.ts, Prisma, BullMQ workers
-├── mobile/   # Expo app — src/app/ (Expo Router), src/features/, src/components/
-├── eslint.config.js   # SINGLE source — do NOT create server/mobile eslint configs
-├── .prettierrc / .prettierignore  # SINGLE source — do NOT create per-package configs
-├── package.json # workspaces: ["server","mobile"]
-└── docker-compose.yml # postgres (pgvector:pg18) + redis:7
+├── server/   # Bun API — src/index.ts, Prisma, BullMQ workers (independent package)
+│   ├── eslint.config.js / .prettierrc / .prettierignore  # local lint/format
+│   └── package.json / bun.lock  # run `bun install` inside server/
+├── mobile/   # Expo app — src/app/ (Expo Router), src/features/, src/components/ (independent package)
+│   ├── eslint.config.js / .prettierrc / .prettierignore  # local lint/format
+│   └── package.json / bun.lock  # run `bun install` inside mobile/
+├── package.json  # root helpers (typecheck/dev only, no lint deps)
+└── docker-compose.yml # postgres (pgvector:pg18) + redis:7  (dev: DB only)
 ```
 
-`server/package.json` and `mobile/package.json` lint/format scripts delegate to root: `eslint --config ../eslint.config.js` / `prettier --config ../.prettierrc`. Run tooling from root when possible.
+`server/` and `mobile/` are **completely independent** — no `workspaces` field, each has its own `eslint.config.js`, `.prettierrc`, `.prettierignore`, `bun.lock` and `node_modules`. Run `bun install` separately inside each folder. Root does not manage them.
 
 ## Commands — always prefer `bunx` over `npx` (`bun.lock` present)
 
 ```bash
-bun install                          # install all workspaces (run at root)
-bun run lint                         # eslint . (root) — lints server + mobile
-bun run lint:fix                      # eslint . --fix
-bun run format                       # prettier --write .
-bun run format:check                 # prettier --check .
-bun run typecheck                    # server tsc + mobile tsc
-bun run dev:server                   # bun run --cwd server dev
-bun run dev:mobile                   # bun run --cwd mobile start
+bun install --cwd server             # install server only
+bun install --cwd mobile             # install mobile only
+# alternative: `cd server && bun install` / `cd mobile && bun install`
 
-# Package-scoped alternatives
-bun run --cwd server lint            # same as above, scoped
-bun run --cwd mobile lint
-bunx --cwd server prisma migrate dev # create migration
-bunx --cwd server prisma generate    # regenerate client (also postinstall)
+bun run --cwd server lint            # eslint . inside server/ (uses server/eslint.config.js)
+bun run --cwd server lint:fix
+bun run --cwd server format          # prettier inside server/
+bun run --cwd mobile lint            # eslint . inside mobile/ (uses mobile/eslint.config.js)
+bun run --cwd mobile lint:fix
+bun run --cwd mobile format
+
+bun run --cwd server dev             # or bun run dev:server from root
+bun run --cwd mobile start           # or bun run dev:mobile from root
+
+# Root helpers (only for root files — server/mobile are independent)
+bun run typecheck                    # server tsc + mobile tsc
+
+bun --cwd=server x prisma migrate dev # create migration (or `cd server && bunx prisma migrate dev`)
+bun --cwd=server x prisma generate    # regenerate client (also postinstall)
 
 # Mobile / Expo — ALWAYS use expo install for SDK-compatible versions
-bunx --cwd mobile expo install <pkg>
-bunx --cwd mobile expo start
-bunx --cwd mobile expo-doctor
-bunx eas-cli build --profile development --platform android  # or bunx --cwd mobile eas build
+bun --cwd=mobile x expo install <pkg>
+bun run --cwd mobile expo start      # or `cd mobile && bunx expo start`
+bun --cwd=mobile x expo-doctor
+bunx eas-cli build --profile development --platform android  # or bun --cwd=mobile x eas build
 ```
 
-Run `bun run lint` + `bun run format:check` before declaring any task done.
+Run `bun run --cwd server lint` + `bun run --cwd server format:check` and `bun run --cwd mobile lint` before declaring any task done.
 
 ## Server conventions
 
@@ -87,8 +94,8 @@ Profiles in `mobile/eas.json` (development/preview/production). Secrets injected
 
 ## Rules
 
-- Do not add `server/eslint.config.js`, `server/.prettierrc`, or `mobile/eslint.config.js` — root is the single source. Extend root `eslint.config.js` with overrides instead.
+- Each package owns its lint/format — `server/eslint.config.js` / `server/.prettierrc` and `mobile/eslint.config.js` / `mobile/.prettierrc` are independent (no root delegation).
 - Do not use `npm`/`yarn`/`pnpm add` — use `bunx expo install` (mobile) or `bun add` (server) and verify SDK compatibility.
-- Keep `bun.lock` at root + per-workspace; do not delete.
-- For Prisma changes: edit `server/prisma/schema.prisma`, then `bunx --cwd server prisma migrate dev` and verify `prisma generate`.
+- Keep `bun.lock` per package (`server/bun.lock`, `mobile/bun.lock`); do not delete.
+- For Prisma changes: edit `server/prisma/schema.prisma`, then `bun --cwd=server x prisma migrate dev` and verify `prisma generate`.
 - For new routes/screens: follow existing `repositories → services → routes → schemas` (server) and `src/features/*/api.ts` + `src/app/` (mobile) patterns.

@@ -1,0 +1,14 @@
+node_modules
+dist
+.expo
+generated
+coverage
+web-build
+.expo-shared
+bun.lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.agents
+skills-lock.json
+expo-env.d.ts
