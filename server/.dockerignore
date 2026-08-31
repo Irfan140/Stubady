@@ -12,6 +12,7 @@ coverage
 .env.development
 .env.local
 .env.test.local
+.env.production
 *.log
 logs
 .DS_Store

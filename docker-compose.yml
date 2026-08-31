@@ -1,63 +1,45 @@
+# Development compose — only Postgres + Redis
+# Server runs locally via `bun run dev:server` (hosts connect via localhost)
+# Usage: docker compose up -d
 services:
   postgres:
     image: pgvector/pgvector:pg18
     container_name: studybuddy-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: studybuddy
+    command: postgres -c shared_preload_libraries=vector -c max_connections=100
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
-    restart: unless-stopped
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U myuser -d studybuddy"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
     container_name: studybuddy-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
-
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: studybuddy-server
-    env_file:
-      - ./server/.env.production
-    environment:
-      DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/studybuddy
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: production
-      PORT: 3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 40s
+      start_period: 5s
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local

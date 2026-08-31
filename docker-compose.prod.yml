@@ -1,54 +1,126 @@
 services:
   postgres:
     image: pgvector/pgvector:pg18
-    container_name: studybuddy-db-prod
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-myuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
-      POSTGRES_DB: ${POSTGRES_DB:-studybuddy}
-    volumes:
-      - postgres_data:/var/lib/postgresql
+    container_name: studybuddy-db
     restart: unless-stopped
+
+    env_file:
+      - ./server/.env.production
+
+    command: >
+      postgres
+      -c shared_preload_libraries=vector
+      -c max_connections=100
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    expose:
+      - "5432"
+
+    networks:
+      - stubady-net
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myuser} -d ${POSTGRES_DB:-studybuddy}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER:-myuser}\" -d \"$${POSTGRES_DB:-studybuddy}\""]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 20s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
     image: redis:7-alpine
-    container_name: studybuddy-redis-prod
+    container_name: studybuddy-redis
+    restart: unless-stopped
+
+    env_file:
+      - ./server/.env.production
+
+    command: >
+      sh -c 'if [ -n "$${REDIS_PASSWORD}" ]; then
+        redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}" --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      else
+        redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      fi'
+
     volumes:
       - redis_data:/data
-    restart: unless-stopped
+
+    expose:
+      - "6379"
+
+    networks:
+      - stubady-net
+
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG; else redis-cli ping | grep -q PONG; fi"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 10s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: studybuddy-server-prod
+
+    container_name: studybuddy-server
+    restart: unless-stopped
+
     env_file:
       - ./server/.env.production
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
+
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: unless-stopped
+
+    networks:
+      - stubady-net
+      - caddy_network
+
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:${PORT:-3000}/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:$${PORT:-3000}/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 40s
 
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    stop_grace_period: 15s
+
+networks:
+  stubady-net:
+    driver: bridge
+
+  caddy_network:
+    external: true
+
 volumes:
   postgres_data:
+    driver: local
+
   redis_data:
+    driver: local
