@@ -30,11 +30,11 @@ RUN addgroup --system --gid 1001 appgroup \
 
 # Copy pruned prod deps: reinstall with --production to drop devDependencies and prisma CLI
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production && \
+RUN bun install --frozen-lockfile --production --ignore-scripts && \
     rm -rf /root/.bun/install/cache
 
 COPY --from=builder /app/generated ./generated
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 COPY prisma ./prisma
 COPY tsconfig.json prisma7.config.ts ./
 COPY src ./src

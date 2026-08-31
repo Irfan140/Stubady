@@ -13,7 +13,7 @@ services:
       -c max_connections=100
 
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
     expose:
       - "5432"
@@ -72,10 +72,7 @@ services:
         max-file: "3"
 
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-
+    image: irfan140/stubudy-server:latest
     container_name: studybuddy-server
     restart: unless-stopped
 
@@ -84,7 +81,6 @@ services:
 
     environment:
       NODE_ENV: production
-      PORT: ${PORT:-3000}
 
     depends_on:
       postgres:
