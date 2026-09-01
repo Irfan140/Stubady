@@ -30,18 +30,22 @@ jobs:
         run: |
           echo "Disk space before cleanup:"
           df -h
-
           sudo rm -rf /usr/share/dotnet || true
           sudo rm -rf /opt/ghc || true
           sudo rm -rf /opt/hostedtoolcache/CodeQL || true
-
           echo "Disk space after cleanup:"
           df -h
+
+      # CRITICAL FOR EXPO SDK 55: Force Node.js version to comply with SDK requirements
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x" 
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.4.0" # Match your local version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -50,12 +54,16 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "17" # Core requirement for Expo native builds
 
-      - name: Setup Android SDK and NDK
+      - name: Setup Android SDK and Tools
         uses: android-actions/setup-android@v3
         with:
-          packages: ndk;27.0.11902837
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+            cmdline-tools;latest
+            ndk;27.0.11902837
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -78,6 +86,7 @@ jobs:
             --non-interactive
         env:
           EAS_BUILD_ID: ${{ github.run_id }}
+          EXPO_BUN_VERSION: "1.4.0" # Keeps internal plugins on your exact version
           EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID }}
@@ -88,11 +97,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-${{ inputs.profile }}
-          path: "mobile/*.apk"
+          path: "mobile/build-*.apk"
 
       - name: Upload AAB
         if: inputs.profile == 'production'
         uses: actions/upload-artifact@v4
         with:
           name: android-production
-          path: "mobile/*.aab"
+          path: "mobile/build-*.aab"
