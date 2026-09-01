@@ -103,7 +103,7 @@ const config: ExpoConfig = {
     router: {},
 
     eas: {
-      projectId: "3c58fbcc-ede2-4ea9-b211-fbba65c39cb9",
+     "projectId": "337168a4-5446-4f92-a8c7-e364f1e732a9"
     },
 
     EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID:
