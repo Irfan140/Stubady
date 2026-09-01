@@ -62,7 +62,6 @@
     "@eslint/js": "^9.25.0",
     "@tanstack/eslint-plugin-query": "^5.102.5",
     "@types/react": "~19.2.2",
-    "eas-cli": "^23.2.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~55.0.1",
     "eslint-config-prettier": "^10.1.8",
