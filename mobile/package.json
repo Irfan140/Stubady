@@ -70,5 +70,7 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.68.0"
   },
-  "private": true
+  "private": true,
+  "packageManager": "bun@1.4.0"
+
 }
