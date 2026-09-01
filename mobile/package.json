@@ -14,8 +14,11 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "build:dev": "eas build --profile development --platform android",
+    "build:prev": "eas build --profile preview --platform android",
     "build:prod": "eas build --profile production --platform android",
-    "build:dev:github-actions": "eas build --platform android --profile development --local"
+    "build:dev:github-actions": "eas build --platform android --profile development --local",
+
+    "eas:credentials": "eas credentials -p android"
   },
   "engines": {
     "node": ">=22"
