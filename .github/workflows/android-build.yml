@@ -30,13 +30,14 @@ jobs:
         run: |
           echo "Disk space before cleanup:"
           df -h
+
           sudo rm -rf /usr/share/dotnet || true
           sudo rm -rf /opt/ghc || true
           sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+
           echo "Disk space after cleanup:"
           df -h
 
-      # CRITICAL FOR EXPO SDK 55: Force Node.js version to comply with SDK requirements
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,7 +52,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "17" # Core requirement for Expo native builds
+          java-version: "17"
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -60,23 +61,13 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
           packager: npm
 
-      - name: Clean Gradle cache
-        run: |
-          rm -rf ~/.gradle/caches || true
-          rm -rf build || true
-
-      - name: Build Android
+      - name: Build Android locally
         run: |
           eas build \
             --platform android \
             --profile ${{ inputs.profile }} \
             --local \
             --non-interactive
-        env:
-          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID }}
-          EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID }}
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
 
       - name: Upload APK
         if: inputs.profile != 'production'

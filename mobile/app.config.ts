@@ -41,11 +41,9 @@ const config: ExpoConfig = {
 
   userInterfaceStyle: "automatic",
 
-  // EAS Update — OTA JS updates (expo-updates SDK 55)
-  // `url` must be https://u.expo.dev/<projectId> for EAS Update service
-  // `runtimeVersion` with fingerprint policy auto-hashes native runtime
+  // EAS Update — OTA JS updates (expo-updates SDK 55) and  `url` must be https://u.expo.dev/<projectId> for EAS Update service
   runtimeVersion: {
-    policy: "fingerprint",
+    policy: "appVersion",
   },
   updates: {
     url: "https://u.expo.dev/3c58fbcc-ede2-4ea9-b211-fbba65c39cb9",
