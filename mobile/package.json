@@ -12,9 +12,13 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
     "build:dev": "eas build --profile development --platform android",
     "build:prod": "eas build --profile production --platform android",
     "build:dev:github-actions": "eas build --platform android --profile development --local"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@clerk/expo": "^4.6.0",
