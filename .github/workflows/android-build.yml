@@ -56,15 +56,6 @@ jobs:
           distribution: temurin
           java-version: "17" # Core requirement for Expo native builds
 
-      - name: Setup Android SDK and Tools
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            cmdline-tools;latest
-            ndk;27.0.11902837
-
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
