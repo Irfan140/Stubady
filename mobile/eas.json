@@ -6,13 +6,11 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "bun": "1.4.0"
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview",
-      "bun": "1.4.0"
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
