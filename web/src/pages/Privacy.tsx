@@ -16,7 +16,7 @@ function H2({ id, children }: { id: string; children: string }) {
   return (
     <h2
       id={id}
-      className="scroll-mt-24 font-serif text-[24px] font-semibold tracking-tight text-ink"
+      className="scroll-mt-24 text-[24px] font-bold tracking-tight text-ink"
     >
       {children}
     </h2>
@@ -48,7 +48,7 @@ export function Privacy() {
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand">
             Privacy policy
           </p>
-          <h1 className="mt-4 max-w-2xl font-serif text-[clamp(1.9rem,4.4vw,2.8rem)] font-semibold leading-[1.12] tracking-tight text-ink">
+          <h1 className="mt-4 max-w-2xl text-[clamp(1.9rem,4.4vw,2.8rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink">
             Your study materials are yours. Here’s exactly how we treat them.
           </h1>
           <p className="mt-4 text-[14px] text-faint">

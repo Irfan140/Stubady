@@ -96,7 +96,7 @@ export function Architecture() {
           </p>
         </Reveal>
         <Reveal delay={70}>
-          <h2 className="mt-4 max-w-2xl font-serif text-[30px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[34px]">
+          <h2 className="mt-4 max-w-2xl text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]">
             The same architecture in the diagram, live on the site.
           </h2>
         </Reveal>
@@ -113,7 +113,7 @@ export function Architecture() {
           <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-6">
             {FLOW.map((step) => (
               <li key={step.n} className="bg-paper p-5">
-                <p className="font-serif text-[13px] font-semibold text-faint">
+                <p className="text-[11px] font-bold tracking-widest text-faint">
                   {step.n}
                 </p>
                 <p className="mt-1.5 text-[14px] font-semibold text-ink">
@@ -275,7 +275,7 @@ export function Architecture() {
         <Reveal delay={80}>
           <div className="mt-4 rounded-2xl border border-line bg-night p-6 text-white sm:p-8">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-              <h3 className="font-serif text-[20px] font-semibold tracking-tight">
+              <h3 className="text-[20px] font-extrabold tracking-tight">
                 Async ingestion pipeline
               </h3>
               <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-[#a9b8e8]">
@@ -313,7 +313,7 @@ export function Architecture() {
                   className="rounded-xl border border-white/15 bg-white/[0.04] p-5"
                 >
                   <p className="flex items-center gap-2.5 text-[13px] font-semibold">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 font-serif text-[12px]">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[12px] font-bold">
                       {i + 1}
                     </span>
                     {col.t}

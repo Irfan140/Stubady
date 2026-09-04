@@ -39,8 +39,8 @@ export function SiteHeader({ route }: { route: Route }) {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b bg-paper/95 backdrop-blur transition-shadow ${
-        scrolled ? "border-line shadow-[0_1px_12px_rgba(22,33,58,0.06)]" : "border-transparent"
+      className={`sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl transition-shadow ${
+        scrolled ? "border-line shadow-[0_1px_12px_rgba(15,23,42,0.06)]" : "border-transparent"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
@@ -59,7 +59,7 @@ export function SiteHeader({ route }: { route: Route }) {
               key={link.target}
               type="button"
               onClick={() => goSection(link.target)}
-              className="rounded-md px-3 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink"
+              className="rounded-full px-3 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-slate-100 hover:text-ink"
             >
               {link.label}
             </button>
@@ -68,7 +68,7 @@ export function SiteHeader({ route }: { route: Route }) {
             type="button"
             onClick={() => goRoute("privacy")}
             aria-current={route === "privacy" ? "page" : undefined}
-            className={`rounded-md px-3 py-2 text-[14px] font-medium transition-colors hover:bg-cream hover:text-ink ${
+            className={`rounded-full px-3 py-2 text-[14px] font-medium transition-colors hover:bg-slate-100 hover:text-ink ${
               route === "privacy" ? "text-brand" : "text-ink-soft"
             }`}
           >
@@ -81,7 +81,7 @@ export function SiteHeader({ route }: { route: Route }) {
             href="https://play.google.com/store"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-brand-deep"
+            className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-ink-soft"
           >
             <svg viewBox="30 336.7 120.9 129.2" width="16" height="16" aria-hidden="true">
               <path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z" />
@@ -95,7 +95,7 @@ export function SiteHeader({ route }: { route: Route }) {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink md:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-ink shadow-sm md:hidden"
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
@@ -114,7 +114,7 @@ export function SiteHeader({ route }: { route: Route }) {
 
       {open ? (
         <nav
-          className="border-t border-line bg-paper px-5 pb-6 pt-3 md:hidden"
+          className="border-t border-line bg-white px-5 pb-6 pt-3 md:hidden"
           aria-label="Mobile"
         >
           <ul className="flex flex-col">
@@ -156,7 +156,7 @@ export function SiteHeader({ route }: { route: Route }) {
             target="_blank"
             rel="noreferrer"
             onClick={() => setOpen(false)}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3.5 text-[16px] font-semibold text-white transition-colors hover:bg-brand-deep"
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3.5 text-[16px] font-semibold text-white transition-colors hover:bg-ink-soft"
           >
             <svg viewBox="30 336.7 120.9 129.2" width="18" height="18" aria-hidden="true">
               <path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z" />

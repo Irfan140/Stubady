@@ -52,7 +52,7 @@ export function DeleteAccount() {
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand">
             Account deletion
           </p>
-          <h1 className="mt-4 max-w-2xl font-serif text-[clamp(1.9rem,4.4vw,2.8rem)] font-semibold leading-[1.12] tracking-tight text-ink">
+          <h1 className="mt-4 max-w-2xl text-[clamp(1.9rem,4.4vw,2.8rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink">
             Delete your Stubady account.
           </h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-7 text-muted">
@@ -134,7 +134,7 @@ export function DeleteAccount() {
                   <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-moss-tint">
                     <CheckIcon className="h-6 w-6 text-moss" />
                   </span>
-                  <h2 className="mt-4 font-serif text-[24px] font-semibold text-ink">
+                  <h2 className="mt-4 text-[24px] font-bold tracking-tight text-ink">
                     Request composed.
                   </h2>
                   <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-7 text-muted">
