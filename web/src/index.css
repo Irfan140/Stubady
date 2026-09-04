@@ -2,24 +2,26 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, sans-serif;
-  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --color-paper: #faf8f3;
-  --color-cream: #f2eee4;
+  --color-paper: #f8fafc;
+  --color-cream: #f1f5f9;
   --color-card: #ffffff;
-  --color-ink: #16213a;
-  --color-ink-soft: #3d4a68;
-  --color-muted: #67718c;
-  --color-faint: #8b94ad;
-  --color-line: #e4dfd2;
-  --color-line-soft: #ede9dc;
-  --color-brand: #1d4ed8;
-  --color-brand-deep: #173da8;
-  --color-brand-tint: #e8eefc;
-  --color-moss: #2f5d3a;
-  --color-moss-tint: #e7efe4;
-  --color-night: #141b31;
+  --color-ink: #0f172a;
+  --color-ink-soft: #1e293b;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-line-soft: #f1f5f9;
+  --color-brand: #2563eb;
+  --color-brand-deep: #1d4ed8;
+  --color-brand-tint: #dbeafe;
+  --color-moss: #059669;
+  --color-moss-tint: #ecfdf5;
+  --color-night: #0f172a;
+  --color-accent: #06b6d4;
 }
 
 html {
@@ -35,7 +37,7 @@ body {
 }
 
 ::selection {
-  background: #1d4ed8;
+  background: #2563eb;
   color: #fff;
 }
 
@@ -66,7 +68,7 @@ body {
 /* Subtle link underline for editorial links */
 .u-link {
   text-decoration: underline;
-  text-decoration-color: #b9c6ee;
+  text-decoration-color: #bfdbfe;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
   transition:
@@ -85,15 +87,28 @@ body {
   border-radius: 4px;
 }
 
-/* Thin ruled-paper detail used behind the product visual */
+/* Thin ruled-paper detail — now very subtle slate */
 .ruled {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
     transparent 27px,
-    rgba(29, 78, 216, 0.08) 27px,
-    rgba(29, 78, 216, 0.08) 28px
+    rgba(37, 99, 235, 0.06) 27px,
+    rgba(37, 99, 235, 0.06) 28px
   );
+}
+
+/* Modern SaaS helpers */
+.saas-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+.saas-gradient-text {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 55%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Caret blink for the composer mock */

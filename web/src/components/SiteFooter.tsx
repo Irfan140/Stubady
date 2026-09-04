@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-cream/60">
+    <footer className="border-t border-line bg-white">
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
@@ -66,7 +66,7 @@ export function SiteFooter() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-faint">
               Study principle
             </p>
-            <p className="mt-4 font-serif text-[17px] italic leading-7 text-ink-soft">
+            <p className="mt-4 text-[16px] font-semibold leading-7 tracking-tight text-ink-soft">
               “Answers mean more when you know exactly which page they came
               from.”
             </p>

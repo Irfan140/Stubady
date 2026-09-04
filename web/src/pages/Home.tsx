@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import archImg from "../assets/stubady_architecture.png";
 import { Architecture } from "../components/Architecture";
 import { Reveal } from "../components/Reveal";
 import {
@@ -15,10 +16,10 @@ import { goToSection, navigate } from "../router";
 
 function Eyebrow({ children }: { children: string }) {
   return (
-    <p className="flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-brand">
-      <span aria-hidden="true" className="inline-block h-px w-7 bg-brand" />
+    <span className="inline-flex items-center gap-2 rounded-full bg-brand-tint px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-brand ring-1 ring-brand/10">
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
       {children}
-    </p>
+    </span>
   );
 }
 
@@ -37,13 +38,13 @@ function SectionHeading({
         <Eyebrow>{eyebrow}</Eyebrow>
       </Reveal>
       <Reveal delay={70}>
-        <h2 className="mt-4 font-serif text-[30px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[34px]">
+        <h2 className="mt-4 text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]">
           {title}
         </h2>
       </Reveal>
       {lede ? (
         <Reveal delay={130}>
-          <p className="mt-4 text-[16px] leading-7 text-muted">{lede}</p>
+          <p className="mt-4 text-[17px] leading-7 text-muted">{lede}</p>
         </Reveal>
       ) : null}
     </div>
@@ -101,7 +102,7 @@ const TOOLS = [
     name: "Summaries on demand",
     body: "Generate a clean, readable summary of any study set whenever you need one — before a lecture, the night before an exam, or when a 40-page PDF needs to become two pages.",
     example: (
-      <div className="rounded-xl border border-line bg-paper p-4 font-serif text-[14.5px] leading-7 text-ink-soft">
+      <div className="rounded-xl border border-line bg-paper p-4 text-[14.5px] leading-7 text-ink-soft">
         <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.1em] text-faint">
           Summary · Cell division
         </p>
@@ -122,7 +123,7 @@ const TOOLS = [
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-faint">
           Card 4 of 18
         </p>
-        <p className="mt-1.5 font-serif text-[16.5px] leading-7 text-ink">
+        <p className="mt-1.5 text-[16.5px] font-semibold leading-7 tracking-tight text-ink">
           Which stage follows metaphase, and what moves where?
         </p>
         <p className="mt-2 border-t border-line-soft pt-2 text-[13px] leading-6 text-muted">
@@ -209,19 +210,25 @@ export function Home() {
   return (
     <main>
       {/* ——— Hero ——— */}
-      <section className="overflow-hidden">
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(700px_350px_at_15%_-10%,rgba(37,99,235,0.08),transparent_70%),radial-gradient(700px_350px_at_85%_15%,rgba(6,182,214,0.06),transparent_70%)]"
+        />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-16 pt-12 sm:px-8 sm:pt-16 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10 lg:pb-24 lg:pt-20">
           <div>
             <Reveal>
               <Eyebrow>Study with your own materials</Eyebrow>
             </Reveal>
             <Reveal delay={70}>
-              <h1 className="mt-5 font-serif text-[clamp(2.35rem,5.2vw,3.55rem)] font-semibold leading-[1.08] tracking-tight text-ink">
-                Study from your notes, not the whole internet.
+              <h1 className="mt-5 text-[clamp(2.35rem,5.2vw,3.65rem)] font-extrabold leading-[0.95] tracking-[-0.03em] text-ink">
+                Study from your notes,
+                <br />
+                <span className="saas-gradient-text">not the whole internet.</span>
               </h1>
             </Reveal>
             <Reveal delay={140}>
-              <p className="mt-5 max-w-xl text-[16.5px] leading-7 text-muted">
+              <p className="mt-5 max-w-xl text-[17px] leading-7 text-muted">
                 Stubady gathers your PDFs, notes, and links into one focused
                 study set — then helps you question it, summarise it, and turn
                 it into flashcards. Every answer cites the source it came from.
@@ -233,7 +240,7 @@ export function Home() {
                   href="https://play.google.com/store"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-3 rounded-xl bg-night px-6 py-3 text-left transition-colors hover:bg-[#1e2a4a]"
+                  className="inline-flex items-center gap-3 rounded-xl bg-ink px-6 py-3 text-left shadow-sm shadow-ink/10 transition-all hover:bg-ink-soft hover:shadow-md hover:shadow-ink/15"
                 >
                   <svg viewBox="30 336.7 120.9 129.2" width="20" height="20" aria-hidden="true">
                     <path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z" />
@@ -242,7 +249,7 @@ export function Home() {
                     <path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z" />
                   </svg>
                   <span>
-                    <span className="block text-[10px] font-medium uppercase tracking-wide text-[#a9b8e8]">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                       GET IT ON
                     </span>
                     <span className="block text-[15px] font-bold leading-tight text-white">
@@ -253,7 +260,7 @@ export function Home() {
                 <button
                   type="button"
                   onClick={() => goToSection("how")}
-                  className="rounded-lg border border-line bg-card px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-cream/60"
+                  className="rounded-xl border border-line bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
                 >
                   See how it works
                 </button>
@@ -285,7 +292,7 @@ export function Home() {
               >
                 <span className="relative block">
                   <img
-                    src="/stubady_architecture.png"
+                    src={archImg}
                     alt="Stubady system architecture — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
                     className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
                     loading="eager"
@@ -318,7 +325,7 @@ export function Home() {
       </section>
 
       {/* ——— Pipeline strip ——— */}
-      <section aria-label="How Stubady fits together" className="border-y border-line bg-cream/50">
+      <section aria-label="How Stubady fits together" className="border-y border-line bg-white">
         <div className="mx-auto max-w-6xl px-5 py-7 sm:px-8">
           <Reveal>
             <ol className="grid gap-5 sm:grid-cols-3 sm:gap-0">
@@ -329,7 +336,7 @@ export function Home() {
                     i === 0 ? "sm:pl-0" : "sm:border-l sm:border-line"
                   }`}
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-night font-serif text-[14px] font-semibold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-white">
                     {i + 1}
                   </span>
                   <span>
@@ -360,11 +367,11 @@ export function Home() {
           <Reveal as="ol" delay={100} className="divide-y divide-line border-y border-line">
             {PAINS.map((pain) => (
               <li key={pain.n} className="grid gap-2 py-7 sm:grid-cols-[52px_1fr] sm:gap-4">
-                <span className="font-serif text-[15px] font-semibold text-faint">
+                <span className="text-[13px] font-bold tracking-widest text-faint">
                   {pain.n}
                 </span>
                 <span>
-                  <span className="block font-serif text-[20px] font-semibold leading-snug text-ink">
+                  <span className="block text-[20px] font-bold leading-snug tracking-tight text-ink">
                     {pain.title}
                   </span>
                   <span className="mt-2 block max-w-lg text-[15px] leading-7 text-muted">
@@ -400,7 +407,7 @@ export function Home() {
                         {String(i + 1).padStart(2, "0")}
                       </span>
                     </p>
-                    <h3 className="mt-3 font-serif text-[24px] font-semibold tracking-tight text-ink">
+                    <h3 className="mt-3 text-[22px] font-bold tracking-tight text-ink">
                       {tool.name}
                     </h3>
                     <p className="mt-3 max-w-lg text-[15px] leading-7 text-muted">
@@ -416,7 +423,7 @@ export function Home() {
           {/* Source types */}
           <Reveal>
             <div className="mt-12 flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6 sm:p-8 lg:flex-row lg:items-center">
-              <p className="font-serif text-[19px] font-semibold text-ink lg:max-w-[240px] lg:shrink-0">
+              <p className="text-[19px] font-extrabold tracking-tight text-ink lg:max-w-[240px] lg:shrink-0">
                 Three ways in. Zero reformatting.
               </p>
               <ul className="grid flex-1 gap-4 sm:grid-cols-3">
@@ -450,7 +457,7 @@ export function Home() {
             {STEPS.map((step, i) => (
               <Reveal as="li" key={step.n} delay={i * 80} className="bg-paper">
                 <div className="flex h-full flex-col p-7 sm:p-8">
-                  <p className="font-serif text-[40px] font-semibold leading-none text-brand/25">
+                  <p className="text-[40px] font-extrabold leading-none tracking-tight text-brand/15">
                     {step.n}
                   </p>
                   <h3 className="mt-4 text-[17px] font-semibold tracking-tight text-ink">
@@ -475,11 +482,11 @@ export function Home() {
       <Architecture />
 
       {/* ——— Trust band ——— */}
-      <section aria-label="Why you can trust Stubady" className="border-y border-line bg-cream/60">
+      <section aria-label="Why you can trust Stubady" className="border-y border-line bg-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
           <Reveal>
             <Eyebrow>Grounded by design</Eyebrow>
-            <blockquote className="mt-5 font-serif text-[clamp(1.5rem,3.4vw,2.1rem)] font-medium leading-[1.3] tracking-tight text-ink">
+            <blockquote className="mt-5 text-[clamp(1.5rem,3.4vw,2.05rem)] font-extrabold leading-[1.2] tracking-[-0.02em] text-ink">
               “If a claim isn’t in your sources, Stubady doesn’t make it. It
               tells you what’s missing instead.”
             </blockquote>
@@ -578,7 +585,7 @@ export function Home() {
             </div>
             <div className="max-h-[calc(90vh-57px)] overflow-auto bg-night p-2 sm:p-3">
               <img
-                src="/stubady_architecture.png"
+                src={archImg}
                 alt="Stubady system architecture fullscreen — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
                 className="h-auto w-full rounded-xl object-contain"
               />
