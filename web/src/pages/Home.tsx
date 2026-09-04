@@ -1,4 +1,5 @@
-import { ProductVisual } from "../components/ProductVisual";
+import { useEffect, useState } from "react";
+import { Architecture } from "../components/Architecture";
 import { Reveal } from "../components/Reveal";
 import {
   CardsIcon,
@@ -189,6 +190,22 @@ const FAQS = [
 ];
 
 export function Home() {
+  const [archOpen, setArchOpen] = useState(false);
+
+  useEffect(() => {
+    if (!archOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setArchOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [archOpen]);
+
   return (
     <main>
       {/* ——— Hero ——— */}
@@ -212,13 +229,27 @@ export function Home() {
             </Reveal>
             <Reveal delay={200}>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={() => goToSection("download")}
-                  className="rounded-lg bg-brand px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-deep"
+                <a
+                  href="https://play.google.com/store"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-3 rounded-xl bg-night px-6 py-3 text-left transition-colors hover:bg-[#1e2a4a]"
                 >
-                  Get Stubady free
-                </button>
+                  <svg viewBox="30 336.7 120.9 129.2" width="20" height="20" aria-hidden="true">
+                    <path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z" />
+                    <path fill="#FF3333" d="M99.1,401.1l-64.2,64.7c1.5,0.2,3.2-0.2,5.2-1.3c4.2-2.3,48.8-26.7,79.1-43.3L99.1,401.1z" />
+                    <path fill="#48FF48" d="M99.1,401.1l20.1-20.2c0,0-74.6-40.7-79.1-43.1c-1.7-1-3.6-1.3-5.3-1L99.1,401.1z" />
+                    <path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z" />
+                  </svg>
+                  <span>
+                    <span className="block text-[10px] font-medium uppercase tracking-wide text-[#a9b8e8]">
+                      GET IT ON
+                    </span>
+                    <span className="block text-[15px] font-bold leading-tight text-white">
+                      Google Play
+                    </span>
+                  </span>
+                </a>
                 <button
                   type="button"
                   onClick={() => goToSection("how")}
@@ -244,7 +275,44 @@ export function Home() {
             </Reveal>
           </div>
           <Reveal delay={160} className="lg:pl-2">
-            <ProductVisual />
+            <figure>
+              <button
+                type="button"
+                onClick={() => setArchOpen(true)}
+                aria-haspopup="dialog"
+                aria-label="Open architecture diagram fullscreen"
+                className="group block w-full overflow-hidden rounded-2xl border border-line bg-night text-left shadow-[0_24px_60px_-28px_rgba(22,33,58,0.45)] transition-shadow hover:shadow-[0_28px_70px_-24px_rgba(22,33,58,0.55)] focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                <span className="relative block">
+                  <img
+                    src="/stubady_architecture.png"
+                    alt="Stubady system architecture — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
+                    className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+                    loading="eager"
+                  />
+                  <span className="pointer-events-none absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-[12px] font-semibold text-ink opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                    <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
+                      <path d="M7.5 3.5h-4v4M12.5 3.5h4v4M7.5 16.5h-4v-4M12.5 16.5h4v-4" />
+                      <path d="M3.5 7.5v5M16.5 7.5v5" opacity="0" />
+                      <path d="M7 12.5 3.5 16M17 4l-3.5 3.5M13 12.5 16.5 16M3.5 4 7 7.5" />
+                    </svg>
+                    Click to expand
+                  </span>
+                </span>
+              </button>
+              <figcaption className="mt-3 text-center text-[12.5px] text-faint">
+                Stubady system architecture — capture, process, and learn in
+                one pipeline.{" "}
+                <button
+                  type="button"
+                  onClick={() => goToSection("architecture")}
+                  className="u-link font-medium text-brand"
+                >
+                  See the breakdown below
+                </button>
+                .
+              </figcaption>
+            </figure>
           </Reveal>
         </div>
       </section>
@@ -403,6 +471,9 @@ export function Home() {
         </div>
       </section>
 
+      {/* ——— Architecture ——— */}
+      <Architecture />
+
       {/* ——— Trust band ——— */}
       <section aria-label="Why you can trust Stubady" className="border-y border-line bg-cream/60">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
@@ -470,62 +541,51 @@ export function Home() {
         </div>
       </section>
 
-      {/* ——— Closing CTA ——— */}
-      <section id="download" className="scroll-mt-20">
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 lg:py-28">
-          <Reveal>
-            <div className="relative overflow-hidden rounded-3xl bg-night px-6 py-14 text-center sm:px-12 lg:py-20">
-              <div
-                aria-hidden="true"
-                className="ruled pointer-events-none absolute inset-0 opacity-40"
-              />
-              <div className="relative">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#a9b8e8]">
-                  Start tonight
-                </p>
-                <h2 className="mx-auto mt-4 max-w-xl font-serif text-[clamp(1.8rem,4.4vw,2.7rem)] font-semibold leading-[1.15] tracking-tight text-white">
-                  Your next study set takes five minutes to build.
-                </h2>
-                <p className="mx-auto mt-4 max-w-lg text-[15.5px] leading-7 text-[#c3cde9]">
-                  Name a subject, add the files you already have, and ask your
-                  first question. Bring one PDF — leave with a summary and a
-                  deck.
-                </p>
-                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <a
-                    href="https://play.google.com/store"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-3 rounded-xl bg-white px-6 py-3.5 text-left transition-colors hover:bg-[#e8ecf7]"
-                  >
-                    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-                      <path fill="#1d4ed8" d="M6 4.5v15c0 .8.9 1.3 1.6.9l12-7.5c.6-.4.6-1.4 0-1.8l-12-7.5C6.9 3.2 6 3.7 6 4.5Z" />
-                    </svg>
-                    <span>
-                      <span className="block text-[11px] font-medium uppercase tracking-wide text-muted">
-                        Get it on
-                      </span>
-                      <span className="block text-[16px] font-bold leading-tight text-ink">
-                        Google Play
-                      </span>
-                    </span>
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => goToSection("how")}
-                    className="rounded-xl border border-white/25 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10"
-                  >
-                    Review how it works
-                  </button>
-                </div>
-                <p className="mt-6 text-[13px] text-[#8e9cc4]">
-                  Free to start · Android · Your data stays exportable and deletable
-                </p>
-              </div>
+
+
+      {archOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Stubady system architecture fullscreen"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-8"
+        >
+          <button
+            type="button"
+            aria-label="Close architecture diagram"
+            onClick={() => setArchOpen(false)}
+            className="absolute inset-0 bg-night/60 backdrop-blur-md"
+          />
+          <div className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-line bg-card shadow-2xl">
+            <div className="flex items-center justify-between gap-4 border-b border-line-soft px-4 py-3 sm:px-5">
+              <p className="truncate text-[14px] font-semibold text-ink">
+                Stubady system architecture{" "}
+                <span className="font-normal text-faint">
+                  · Capture · Process · Learn
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setArchOpen(false)}
+                autoFocus
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:bg-cream"
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
             </div>
-          </Reveal>
+            <div className="max-h-[calc(90vh-57px)] overflow-auto bg-night p-2 sm:p-3">
+              <img
+                src="/stubady_architecture.png"
+                alt="Stubady system architecture fullscreen — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
+                className="h-auto w-full rounded-xl object-contain"
+              />
+            </div>
+          </div>
         </div>
-      </section>
+      ) : null}
     </main>
   );
 }
