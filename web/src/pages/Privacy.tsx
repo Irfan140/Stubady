@@ -249,8 +249,8 @@ export function Privacy() {
                 <H2 id="contact">Contact</H2>
                 <P>
                   Questions about privacy, or a rights request? Write to us at{" "}
-                  <a href="mailto:support@stubady.app" className="u-link font-medium text-brand">
-                    support@stubady.app
+                  <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
+                    irfanmehmud140@gmail.com
                   </a>
                   . Please include the email address you signed up with so we
                   can locate your account.
