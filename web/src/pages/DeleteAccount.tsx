@@ -41,7 +41,7 @@ export function DeleteAccount() {
     const body = encodeURIComponent(
       `Hello Stubady team,\n\nPlease delete my Stubady account and all associated data.\n\nAccount email: ${email.trim()}\n${reason ? `Reason for leaving (optional): ${reason}\n` : ""}\nI understand this permanently removes my study sets, sources, chats, summaries, and flashcards.\n\nThank you.`,
     );
-    window.location.href = `mailto:support@stubady.app?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:irfanmehmud140@gmail.com?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
@@ -57,8 +57,12 @@ export function DeleteAccount() {
           </h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-7 text-muted">
             Sorry to see you go. Deletion is permanent and removes everything
-            listed below. Requests are completed within 30 days and confirmed
-            by email.
+            listed below. To request deletion, email us at{" "}
+            <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
+              irfanmehmud140@gmail.com
+            </a>{" "}
+            or use the form below. Requests are completed within 30 days and
+            confirmed by email.
           </p>
         </Reveal>
 
@@ -110,8 +114,8 @@ export function DeleteAccount() {
                     privacy policy
                   </button>{" "}
                   or email{" "}
-                  <a href="mailto:support@stubady.app" className="u-link font-medium text-brand">
-                    support@stubady.app
+                  <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
+                    irfanmehmud140@gmail.com
                   </a>
                   .
                 </p>
@@ -141,8 +145,8 @@ export function DeleteAccount() {
                   </p>
                   <p className="mx-auto mt-3 max-w-sm text-[13.5px] leading-6 text-faint">
                     No email app opened? Send the same details manually to{" "}
-                    <a href="mailto:support@stubady.app" className="u-link font-medium text-brand">
-                      support@stubady.app
+                    <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
+                      irfanmehmud140@gmail.com
                     </a>
                     .
                   </p>
@@ -163,8 +167,12 @@ export function DeleteAccount() {
                     Request deletion by email
                   </h2>
                   <p className="mt-2 text-[14px] leading-6 text-muted">
-                    This composes an email to our support team from your own
-                    inbox — nothing is sent until you press send there.
+                    This composes an email to{" "}
+                    <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
+                      irfanmehmud140@gmail.com
+                    </a>{" "}
+                    from your own inbox — nothing is sent until you press send
+                    there.
                   </p>
 
                   <div className="mt-6">

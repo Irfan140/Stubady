@@ -34,9 +34,14 @@ export function SiteFooter() {
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => goToSection("download")} className="transition-colors hover:text-brand">
+                <a
+                  href="https://play.google.com/store"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-brand"
+                >
                   Get the app
-                </button>
+                </a>
               </li>
             </ul>
           </nav>
