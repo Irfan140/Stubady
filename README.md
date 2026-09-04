@@ -1,10 +1,18 @@
 # Stubady
 
 <p align="center">
-  <img src="./assets/architecture.png" alt="NutriSnap demo"/>
+  <img src="./assets/feature graphic.png" alt="NutriSnap demo"/>
 </p>
 
 Stubady is an AI study companion that turns your own materials into an interactive learning experience. Upload PDFs, paste notes, or add web links and chat with an assistant that answers only from what you've provided. It is built to make revision faster, more focused, and actually personal to your content.
+
+## Screenshots
+
+<p align="center">
+  <img src="./assets/Home.png" width="32.8%" alt="Home Screen" />
+  <img src="./assets/source.png" width="32.8%" alt="Add Source Screen" />
+  <img src="./assets/study_set.png" width="32.8%" alt="StudySet Screen" />
+</p>
 
 ## Features
 
@@ -45,3 +53,10 @@ Stubady is an AI study companion that turns your own materials into an interacti
 - EAS Build
 - Docker Compose
 - GitHub Actions
+
+
+## Architecture
+
+<p align="center">
+  <img src="./assets/architecture.png" alt="NutriSnap demo"/>
+</p>
