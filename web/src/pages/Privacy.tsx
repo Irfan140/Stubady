@@ -3,6 +3,7 @@ import { Reveal } from "../components/Reveal";
 const SECTIONS = [
   { id: "overview", label: "Overview" },
   { id: "collect", label: "Data we collect" },
+  { id: "google-data", label: "Sign in with Google" },
   { id: "use", label: "How we use it" },
   { id: "processors", label: "Processors & sharing" },
   { id: "retention", label: "Retention & deletion" },
@@ -108,7 +109,9 @@ export function Privacy() {
                     <>
                       <strong className="font-semibold text-ink">Account details.</strong>{" "}
                       Name, email address, and authentication identifiers handled through our sign-in
-                      provider (Clerk) so you can log in securely.
+                      provider (Clerk) so you can log in securely — including the name, email
+                      address, and profile picture shared by Google when you choose “Continue with
+                      Google” (see “Sign in with Google” below).
                     </>,
                     <>
                       <strong className="font-semibold text-ink">Study materials you provide.</strong>{" "}
@@ -130,6 +133,63 @@ export function Privacy() {
                 <P>
                   We don’t ask for contacts, location, or anything outside the
                   study workflow, and there’s no advertising SDK in the app.
+                </P>
+              </div>
+            </Reveal>
+
+            <Reveal>
+              <div className="mt-10">
+                <H2 id="google-data">Sign in with Google</H2>
+                <P>
+                  Stubady offers “Continue with Google” so you can sign in
+                  without creating another password. When you choose it, Google
+                  shares your name, email address, and profile picture with us
+                  through the standard OpenID Connect scopes (openid, email,
+                  and profile). We request nothing else from your Google
+                  account — not your emails, files, contacts, calendar, or
+                  location.
+                </P>
+                <P>We use this Google account data only to:</P>
+                <List
+                  items={[
+                    "Create and identify your Stubady account.",
+                    "Keep you signed in across sessions.",
+                    "Show your name and photo as your profile in the app.",
+                    "Send account-related emails such as verification codes and deletion confirmations.",
+                  ]}
+                />
+                <P>
+                  Sign-in itself is handled by our authentication provider,
+                  Clerk. Google account tokens are used solely to verify your
+                  identity at sign-in and are never used for any other purpose.
+                </P>
+                <P>
+                  Our use of information received from Google APIs complies
+                  with the Google API Services User Data Policy, including its
+                  Limited Use requirements: we use Google user data only for
+                  the purposes described here, we never sell it, we never use
+                  it for advertising, and we never allow humans to read it
+                  except with your consent, for security and abuse prevention,
+                  to comply with the law, or for internal operations consistent
+                  with these purposes. We transfer Google user data to others
+                  only as necessary to provide the feature (for example, to our
+                  authentication provider), with your consent, or as required
+                  for security, legal compliance, or safety.
+                </P>
+                <P>
+                  Google profile data is kept for as long as your account is
+                  active and is deleted with the rest of your account data when
+                  you delete your account (see “Retention & deletion”). You can
+                  revoke Stubady’s access at any time from your{" "}
+                  <a
+                    href="https://myaccount.google.com/permissions"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="u-link font-medium text-brand"
+                  >
+                    Google Account permissions page
+                  </a>
+                  , without affecting data already deleted through the app.
                 </P>
               </div>
             </Reveal>
@@ -159,7 +219,8 @@ export function Privacy() {
                   items={[
                     <>
                       <strong className="font-semibold text-ink">Authentication</strong> — Clerk
-                      (sign-in, session management).
+                      (sign-in, session management), with Google as the identity provider when you
+                      choose “Continue with Google”.
                     </>,
                     <>
                       <strong className="font-semibold text-ink">Hosting & storage</strong> — managed

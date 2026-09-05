@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Reveal } from "../components/Reveal";
 import { CheckIcon } from "../components/icons";
-import { navigate } from "../router";
 
 const DELETED_ITEMS = [
   "Your profile and sign-in identity",
@@ -110,9 +109,9 @@ export function DeleteAccount() {
                 </ol>
                 <p className="mt-5 border-t border-line-soft pt-4 text-[13.5px] leading-6 text-muted">
                   Prefer to keep your data but have a concern? Read the{" "}
-                  <button type="button" onClick={() => navigate("privacy")} className="u-link font-medium text-brand">
+                  <a href="#/privacy" className="u-link font-medium text-brand">
                     privacy policy
-                  </button>{" "}
+                  </a>{" "}
                   or email{" "}
                   <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
                     irfanmehmud140@gmail.com

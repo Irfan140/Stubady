@@ -88,6 +88,15 @@ export function CheckIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ShieldIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M10 2.8 4.5 5v5.2c0 3.4 2.3 5.9 5.5 7 3.2-1.1 5.5-3.6 5.5-7V5L10 2.8Z" />
+      <path d="m7.5 10 1.8 1.8 3.2-3.6" />
+    </Base>
+  );
+}
+
 export function ArrowRightIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>

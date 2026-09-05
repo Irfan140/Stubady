@@ -9,10 +9,11 @@ import {
   LibraryIcon,
   NoteIcon,
   PdfIcon,
+  ShieldIcon,
   SourceIcon,
   SummaryIcon,
 } from "../components/icons";
-import { goToSection, navigate } from "../router";
+import { goToSection } from "../router";
 
 function Eyebrow({ children }: { children: string }) {
   return (
@@ -172,6 +173,10 @@ const STEPS = [
 ];
 
 const FAQS = [
+  {
+    q: "Why does Stubady ask for my Google account?",
+    a: "Only to sign you in. Google shares your name, email address, and profile picture so we can create your account, keep you logged in, and show your profile. We never see your emails, files, contacts, or anything else in your Google account — and you can disconnect Stubady any time from your Google Account permissions page. The section below spells it out, with the full detail in the privacy policy.",
+  },
   {
     q: "What can I add as a source?",
     a: "PDF documents, typed or pasted notes, and web pages. Each source is processed automatically and marked queued, processing, ready, or failed — study tools only draw on sources that are ready.",
@@ -512,6 +517,62 @@ export function Home() {
         </div>
       </section>
 
+      {/* ——— Sign-in & your data ——— */}
+      <section id="data" aria-label="Sign in and your data" className="scroll-mt-20 border-b border-line bg-card">
+        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 lg:py-24">
+          <SectionHeading
+            eyebrow="Sign-in & your data"
+            title="Sign in with Google. Nothing else taken."
+            lede="Stubady signs you in with your Google account so you don't need another password. When you choose it, Google shares exactly three things — your name, your email address, and your profile picture — and we use them only to create your account, keep you signed in, and show your profile. That's the whole list."
+          />
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                t: "Name & profile photo",
+                s: "Shown in the app as your profile, so your study space feels like yours.",
+              },
+              {
+                t: "Email address",
+                s: "Identifies your account, delivers verification codes, and carries account emails like deletion confirmations.",
+              },
+              {
+                t: "What we never touch",
+                s: "Your Gmail, Drive files, contacts, calendar, location — none of it is requested, accessed, or stored.",
+              },
+            ].map((c) => (
+              <Reveal key={c.t}>
+                <div className="flex h-full flex-col gap-3 rounded-2xl border border-line bg-paper p-6">
+                  <ShieldIcon className="h-6 w-6 text-brand" />
+                  <p className="text-[16px] font-bold tracking-tight text-ink">{c.t}</p>
+                  <p className="text-[14px] leading-6 text-muted">{c.s}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal>
+            <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-line bg-paper p-6 text-[14px] leading-6 text-muted sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-2xl">
+                You stay in control: disconnect Stubady any time from your{" "}
+                <a
+                  href="https://myaccount.google.com/permissions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="u-link font-medium text-brand"
+                >
+                  Google Account permissions page
+                </a>
+                , or delete your Stubady account entirely — which removes your
+                profile and everything attached to it. Full detail in the{" "}
+                <a href="#/privacy" className="u-link font-medium text-brand">
+                  privacy policy
+                </a>
+                .
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ——— FAQ ——— */}
       <section aria-label="Questions" className="border-b border-line">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:py-24">
@@ -523,9 +584,9 @@ export function Home() {
             <Reveal delay={140}>
               <p className="mt-5 text-[15px] leading-7 text-muted">
                 Anything else? Read the{" "}
-                <button type="button" onClick={() => navigate("privacy")} className="u-link font-medium text-brand">
+                <a href="#/privacy" className="u-link font-medium text-brand">
                   privacy policy
-                </button>{" "}
+                </a>{" "}
                 or write to us — details are at the bottom of that page.
               </p>
             </Reveal>
