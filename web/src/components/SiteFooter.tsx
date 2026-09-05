@@ -1,4 +1,4 @@
-import { goToSection, navigate } from "../router";
+import { goToSection } from "../router";
 import { Logo } from "./Logo";
 
 export function SiteFooter() {
@@ -51,14 +51,14 @@ export function SiteFooter() {
             </p>
             <ul className="mt-4 space-y-2.5 text-[14px] font-medium text-ink-soft">
               <li>
-                <button type="button" onClick={() => navigate("privacy")} className="transition-colors hover:text-brand">
+                <a href="#/privacy" className="transition-colors hover:text-brand">
                   Privacy policy
-                </button>
+                </a>
               </li>
               <li>
-                <button type="button" onClick={() => navigate("delete-account")} className="transition-colors hover:text-brand">
+                <a href="#/delete-account" className="transition-colors hover:text-brand">
                   Delete your account
-                </button>
+                </a>
               </li>
             </ul>
           </nav>

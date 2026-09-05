@@ -6,6 +6,7 @@ const SECTION_LINKS = [
   { label: "Why Stubady", target: "why" },
   { label: "Study tools", target: "tools" },
   { label: "How it works", target: "how" },
+  { label: "Your data", target: "data" },
   { label: "Architecture", target: "architecture" },
 ];
 
