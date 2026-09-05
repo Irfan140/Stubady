@@ -174,7 +174,7 @@ export default function Chat() {
                     android: item.role === "user" ? "person" : "auto_awesome",
                     ios: item.role === "user" ? "person.fill" : "sparkles",
                   }}
-                  tintColor={item.role === "user" ? "#1D4ED8" : "#7C3AED"}
+                  tintColor={item.role === "user" ? "#4338CA" : "#7C3AED"}
                   size={18}
                 />
               </View>

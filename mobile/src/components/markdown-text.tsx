@@ -154,9 +154,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   listRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
-  bullet: { color: "#2563EB", fontSize: 20, lineHeight: 25 },
+  bullet: { color: "#4F46E5", fontSize: 20, lineHeight: 25 },
   number: {
-    color: "#2563EB",
+    color: "#4F46E5",
     fontSize: 15,
     lineHeight: 25,
     fontWeight: "700",

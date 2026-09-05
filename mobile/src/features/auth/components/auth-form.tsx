@@ -1,20 +1,27 @@
 import { useSignIn, useSignUp } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, styles as ui } from "@/components/ui";
+import { Button, TextField, styles as ui } from "@/components/ui";
+import { hapticError, hapticSuccess } from "@/lib/haptics";
+import { palette, radius, shadow, type } from "@/theme";
 import {
   credentialsSchema,
   verificationSchema,
@@ -22,14 +29,22 @@ import {
 } from "../schemas";
 import { GoogleSignInButton } from "./google-sign-in-button";
 
+const highlights = [
+  { label: "Summaries from your own material" },
+  { label: "Flashcards generated in seconds" },
+  { label: "A tutor chat for every study set" },
+];
+
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const isSignUp = mode === "sign-up";
   const signInState = useSignIn();
   const signUpState = useSignUp();
   const [verificationRequired, setVerificationRequired] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const form = useForm<CredentialsInput>({
     resolver: zodResolver(credentialsSchema),
     defaultValues: { email: "", password: "" },
@@ -56,6 +71,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           setFinishing(true);
           const finalized = await signUpState.signUp.finalize();
           if (finalized.error) throw finalized.error;
+          hapticSuccess();
           router.replace("/(app)/(tabs)");
           return;
         }
@@ -74,6 +90,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         setFinishing(true);
         const finalized = await signInState.signIn.finalize();
         if (finalized.error) throw finalized.error;
+        hapticSuccess();
         router.replace("/(app)/(tabs)");
         return;
       }
@@ -82,6 +99,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       );
     } catch (error) {
       setFinishing(false);
+      hapticError();
       setServerError(getError(error));
     }
   };
@@ -96,9 +114,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       setFinishing(true);
       const finalized = await signUpState.signUp.finalize();
       if (finalized.error) throw finalized.error;
+      hapticSuccess();
       router.replace("/(app)/(tabs)");
     } catch (error) {
       setFinishing(false);
+      hapticError();
       setServerError(getError(error));
     }
   };
@@ -109,6 +129,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       const result = await signUpState.signUp.verifications.sendEmailCode();
       if (result.error) throw result.error;
     } catch (error) {
+      hapticError();
       setServerError(getError(error));
     }
   };
@@ -118,25 +139,60 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       style={ui.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <StatusBar style="dark" />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: Math.max(insets.top, 16) + 12,
+            paddingBottom: Math.max(insets.bottom, 16) + 24,
+          },
+        ]}
       >
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>STUDBADY</Text>
+          <View style={styles.brandRow}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={styles.logo}
+                contentFit="contain"
+              />
+            </View>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>AI STUDY COPILOT</Text>
+            </View>
+          </View>
           <Text style={styles.title}>
             {isSignUp ? "Start learning smarter." : "Welcome back."}
           </Text>
-          <Text style={ui.muted}>
+          <Text style={styles.subtitle}>
             {isSignUp
-              ? "Create your account and turn your notes into a study plan."
+              ? "Create your account and turn your notes into summaries, flashcards, and focused chats."
               : "Pick up where you left off."}
           </Text>
+          {isSignUp ? (
+            <View style={styles.highlights}>
+              {highlights.map((item) => (
+                <View key={item.label} style={styles.highlightRow}>
+                  <SymbolView
+                    name={{
+                      ios: "checkmark.circle.fill",
+                      android: "check_circle",
+                    }}
+                    tintColor={palette.primary}
+                    size={18}
+                  />
+                  <Text style={styles.highlightText}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
         {verificationRequired ? (
-          <View style={ui.card}>
-            <Text style={styles.subtitle}>Check your email</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Check your email</Text>
             <Text style={ui.muted}>
               Enter the verification code we sent to your email address.
             </Text>
@@ -144,19 +200,15 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               control={verificationForm.control}
               name="code"
               render={({ field, fieldState }) => (
-                <>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Verification code"
-                    keyboardType="number-pad"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                  <Text style={styles.fieldError}>
-                    {fieldState.error?.message}
-                  </Text>
-                </>
+                <TextField
+                  label="Verification code"
+                  placeholder="6-digit code"
+                  keyboardType="number-pad"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={fieldState.error?.message}
+                />
               )}
             />
             <Button
@@ -172,26 +224,31 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               }}
             />
             {serverError ? (
-              <Text style={styles.fieldError} selectable>
-                {serverError}
-              </Text>
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText} selectable>
+                  {serverError}
+                </Text>
+              </View>
             ) : null}
           </View>
         ) : (
           <>
             <GoogleSignInButton showDivider />
-            <View style={ui.card}>
+            <View style={styles.card}>
               <Controller
                 control={form.control}
                 name="email"
                 render={({ field, fieldState }) => (
-                  <Field
+                  <TextField
                     label="Email"
+                    placeholder="you@example.com"
                     value={field.value}
                     onChangeText={field.onChange}
+                    onBlur={field.onBlur}
                     error={fieldState.error?.message}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    autoComplete="email"
                   />
                 )}
               />
@@ -199,19 +256,55 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
                 control={form.control}
                 name="password"
                 render={({ field, fieldState }) => (
-                  <Field
-                    label="Password"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    error={fieldState.error?.message}
-                    secureTextEntry
-                  />
+                  <View style={ui.field}>
+                    <Text style={ui.label}>Password</Text>
+                    <View style={styles.passwordWrap}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Your password"
+                        placeholderTextColor={palette.faint}
+                        value={field.value}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        secureTextEntry={!passwordVisible}
+                        autoCapitalize="none"
+                        autoComplete={
+                          isSignUp ? "new-password" : "current-password"
+                        }
+                      />
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          passwordVisible ? "Hide password" : "Show password"
+                        }
+                        hitSlop={12}
+                        onPress={() => setPasswordVisible((value) => !value)}
+                        style={styles.eyeButton}
+                      >
+                        <SymbolView
+                          name={{
+                            ios: passwordVisible ? "eye.slash" : "eye",
+                            android: passwordVisible
+                              ? "visibility_off"
+                              : "visibility",
+                          }}
+                          tintColor={palette.muted}
+                          size={20}
+                        />
+                      </Pressable>
+                    </View>
+                    <Text style={ui.fieldError}>
+                      {fieldState.error?.message}
+                    </Text>
+                  </View>
                 )}
               />
               {serverError ? (
-                <Text style={styles.fieldError} selectable>
-                  {serverError}
-                </Text>
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorText} selectable>
+                    {serverError}
+                  </Text>
+                </View>
               ) : null}
               <Button
                 title={isSignUp ? "Create account" : "Sign in"}
@@ -239,7 +332,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       </ScrollView>
       {finishing ? (
         <View style={styles.transition}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={palette.primary} />
           <Text style={styles.transitionTitle}>
             Opening your study space...
           </Text>
@@ -250,58 +343,101 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   );
 }
 
-function Field({
-  label,
-  error,
-  ...props
-}: { label: string; error?: string } & React.ComponentProps<typeof TextInput>) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...props}
-        style={styles.input}
-        placeholder={label}
-        placeholderTextColor="#94A3B8"
-      />
-      <Text style={styles.fieldError}>{error}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 20 },
-  header: { gap: 8 },
-  eyebrow: {
-    color: "#2563EB",
-    fontSize: 13,
+  header: { gap: 10 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  logoBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.line,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadow.card,
+  },
+  logo: { width: 34, height: 34, borderRadius: 10 },
+  pill: {
+    backgroundColor: palette.primarySoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  pillText: {
+    color: palette.primaryDeep,
+    fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 2,
+    letterSpacing: 1.4,
   },
   title: {
-    color: "#0F172A",
-    fontSize: 34,
+    color: palette.ink,
+    fontSize: type.display.fontSize,
     fontWeight: "800",
-    letterSpacing: -1,
+    letterSpacing: type.display.letterSpacing,
   },
-  subtitle: { color: "#0F172A", fontSize: 21, fontWeight: "700" },
-  field: { gap: 5 },
-  label: { color: "#334155", fontSize: 14, fontWeight: "600" },
-  input: {
+  subtitle: {
+    color: palette.muted,
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
+  },
+  highlights: {
+    gap: 8,
+    marginTop: 4,
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 12,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    color: "#0F172A",
-    fontSize: 16,
-    backgroundColor: "#F8FAFC",
+    borderColor: palette.line,
+    borderRadius: radius.lg,
+    padding: 14,
+    ...shadow.card,
   },
-  fieldError: { minHeight: 17, color: "#B91C1C", fontSize: 12 },
-  switch: { color: "#64748B", textAlign: "center", fontSize: 14 },
-  link: { color: "#2563EB", fontWeight: "700" },
+  highlightRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  highlightText: { color: palette.body, fontSize: 14, fontWeight: "600" },
+  card: {
+    backgroundColor: palette.surface,
+    borderRadius: radius.xl,
+    padding: 18,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: palette.line,
+    ...shadow.card,
+  },
+  cardTitle: {
+    color: palette.ink,
+    fontSize: type.h2.fontSize,
+    fontWeight: "800",
+  },
+  passwordWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: palette.line,
+    borderRadius: radius.md,
+    backgroundColor: "#FAFBFE",
+    paddingRight: 6,
+  },
+  passwordInput: {
+    flex: 1,
+    minHeight: 50,
+    paddingHorizontal: 14,
+    color: palette.ink,
+    fontSize: 16,
+  },
+  eyeButton: { padding: 8 },
+  errorBanner: {
+    backgroundColor: palette.dangerSoft,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  errorText: { color: palette.danger, fontSize: 13, lineHeight: 18 },
+  switch: { color: palette.muted, textAlign: "center", fontSize: 14 },
+  link: { color: palette.primary, fontWeight: "700" },
   forgot: {
-    color: "#2563EB",
+    color: palette.primary,
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
@@ -311,8 +447,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "rgba(248, 250, 252, 0.96)",
+    backgroundColor: "rgba(244, 246, 251, 0.96)",
   },
-  transitionTitle: { color: "#0F172A", fontSize: 18, fontWeight: "800" },
-  transitionText: { color: "#64748B", fontSize: 14 },
+  transitionTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+  transitionText: { color: palette.muted, fontSize: 14 },
 });

@@ -46,7 +46,7 @@ const config: ExpoConfig = {
     policy: "appVersion",
   },
   updates: {
-    url: "https://u.expo.dev/3c58fbcc-ede2-4ea9-b211-fbba65c39cb9",
+    url: "https://u.expo.dev/337168a4-5446-4f92-a8c7-e364f1e732a9",
     fallbackToCacheTimeout: 0,
   },
 
@@ -78,7 +78,7 @@ const config: ExpoConfig = {
     [
       "expo-splash-screen",
       {
-        backgroundColor: "#208AEF",
+        backgroundColor: "#FFFFFF",
 
         android: {
           image: "./assets/images/splash-icon.png",
@@ -101,7 +101,7 @@ const config: ExpoConfig = {
     router: {},
 
     eas: {
-     "projectId": "337168a4-5446-4f92-a8c7-e364f1e732a9"
+      projectId: "337168a4-5446-4f92-a8c7-e364f1e732a9",
     },
 
     EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID:
