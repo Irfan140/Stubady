@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   },
   heading: { flex: 1, gap: 4 },
   eyebrow: {
-    color: "#2563EB",
+    color: "#4F46E5",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.3,

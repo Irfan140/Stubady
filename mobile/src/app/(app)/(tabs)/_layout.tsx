@@ -1,10 +1,31 @@
 import { Tabs } from "expo-router";
 import { SymbolView } from "expo-symbols";
 
+import { hapticSelection } from "@/lib/haptics";
+import { palette } from "@/theme";
+
 export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{ tabBarActiveTintColor: "#2563EB", headerShown: false }}
+      screenOptions={{
+        tabBarActiveTintColor: palette.primary,
+        tabBarInactiveTintColor: palette.faint,
+        headerShown: false,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
+        tabBarStyle: {
+          backgroundColor: palette.surface,
+          borderTopColor: palette.line,
+          borderTopWidth: 1,
+          height: 68,
+          paddingTop: 8,
+          paddingBottom: 12,
+        },
+      }}
+      screenListeners={{
+        tabPress: () => {
+          hapticSelection();
+        },
+      }}
     >
       <Tabs.Screen
         name="index"
@@ -13,7 +34,7 @@ export default function TabsLayout() {
           tabBarLabel: "Study sets",
           tabBarIcon: ({ color, size }) => (
             <SymbolView
-              name={{ android: "menu_book", ios: "book" }}
+              name={{ android: "library_books", ios: "books.vertical" }}
               tintColor={color}
               size={size}
             />

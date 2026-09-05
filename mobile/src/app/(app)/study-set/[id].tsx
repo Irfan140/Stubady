@@ -236,7 +236,7 @@ export default function StudySetDetail() {
                   />
                   {generateCards.isPending ? (
                     <View style={styles.processing}>
-                      <ActivityIndicator color="#2563EB" />
+                      <ActivityIndicator color="#4F46E5" />
                       <Text style={styles.processingTitle}>
                         Building your review deck...
                       </Text>
@@ -385,7 +385,7 @@ function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
                 : styles.processingPill,
           ]}
         >
-          {active ? <ActivityIndicator size="small" color="#2563EB" /> : null}
+          {active ? <ActivityIndicator size="small" color="#4F46E5" /> : null}
           <Text style={styles.statusText}>
             {active
               ? item.status === "pending"
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sourceType: {
-    color: "#2563EB",
+    color: "#4F46E5",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1,
@@ -610,9 +610,9 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: "#EFF6FF",
   },
-  processingTitle: { color: "#1D4ED8", fontWeight: "700" },
+  processingTitle: { color: "#4338CA", fontWeight: "700" },
   cardTitle: { color: "#0F172A", fontSize: 18, fontWeight: "700" },
-  link: { color: "#2563EB", fontWeight: "700" },
+  link: { color: "#4F46E5", fontWeight: "700" },
   error: { color: "#B91C1C", textAlign: "center" },
   pickerBackdrop: {
     flex: 1,

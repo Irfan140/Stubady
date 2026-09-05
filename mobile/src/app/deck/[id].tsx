@@ -143,7 +143,7 @@ export default function Deck() {
 }
 
 const styles = StyleSheet.create({
-  progress: { color: "#2563EB", fontWeight: "800", textAlign: "center" },
+  progress: { color: "#4F46E5", fontWeight: "800", textAlign: "center" },
   cardContainer: { minHeight: 260, position: "relative" },
   cardFace: {
     position: "absolute",
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   backFace: { backgroundColor: "#EFF6FF" },
   label: {
-    color: "#2563EB",
+    color: "#4F46E5",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.5,

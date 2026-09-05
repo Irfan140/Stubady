@@ -86,7 +86,7 @@ export default function Summaries() {
 }
 
 const styles = StyleSheet.create({
-  date: { color: "#2563EB", fontSize: 12, fontWeight: "800" },
+  date: { color: "#4F46E5", fontSize: 12, fontWeight: "800" },
   preview: { color: "#334155", fontSize: 15, lineHeight: 22 },
-  link: { color: "#2563EB", fontWeight: "700" },
+  link: { color: "#4F46E5", fontWeight: "700" },
 });

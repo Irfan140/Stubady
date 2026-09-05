@@ -1,17 +1,41 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Image as ExpoImage } from "expo-image";
+import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
+
+import { hapticLight } from "@/lib/haptics";
+import { palette, radius, shadow, type } from "@/theme";
+
+export function Screen({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.screen, style]}>
+      <StatusBar style="dark" />
+      {children}
+    </View>
+  );
+}
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <View style={styles.center}>
-      <ActivityIndicator color="#2563EB" />
+    <View style={[styles.screen, styles.center]}>
+      <StatusBar style="dark" />
+      <ActivityIndicator color={palette.primary} size="large" />
       <Text style={styles.muted}>{label}</Text>
     </View>
   );
@@ -25,7 +49,8 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <View style={styles.center}>
+    <View style={[styles.screen, styles.center]}>
+      <StatusBar style="dark" />
       <Text style={styles.error}>{message}</Text>
       {onRetry ? (
         <Button title="Try again" onPress={onRetry} variant="secondary" />
@@ -38,16 +63,19 @@ export function EmptyState({
   title,
   message,
   action,
+  icon,
 }: {
   title: string;
   message: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <View style={styles.empty}>
+      {icon ? <View style={styles.emptyIcon}>{icon}</View> : null}
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.muted}>{message}</Text>
-      {action}
+      {action ? <View style={styles.emptyAction}>{action}</View> : null}
     </View>
   );
 }
@@ -58,50 +86,98 @@ export function Button({
   disabled = false,
   loading = false,
   variant = "primary",
+  icon,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
   variant?: "primary" | "secondary" | "danger";
+  icon?: ReactNode;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
       disabled={disabled || loading}
-      onPress={onPress}
+      onPress={() => {
+        hapticLight();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.button,
         variant === "secondary" && styles.secondaryButton,
         variant === "danger" && styles.dangerButton,
+        variant === "primary" && pressed && !disabled && !loading
+          ? styles.primaryPressed
+          : null,
+        variant !== "primary" && pressed && !disabled && !loading
+          ? styles.ghostPressed
+          : null,
         (disabled || loading) && styles.disabled,
-        pressed && !disabled && !loading && styles.pressed,
       ]}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? "#FFFFFF" : "#0F172A"}
+          color={variant === "primary" ? "#FFFFFF" : palette.ink}
         />
       ) : (
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.8}
-          style={[
-            styles.buttonText,
-            variant !== "primary" && styles.secondaryText,
-          ]}
-        >
-          {title}
-        </Text>
+        <View style={styles.buttonRow}>
+          {icon}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            style={[
+              styles.buttonText,
+              variant === "secondary" && styles.secondaryText,
+              variant === "danger" && styles.dangerText,
+            ]}
+          >
+            {title}
+          </Text>
+        </View>
       )}
     </Pressable>
   );
 }
 
-export function Card({ children }: { children: ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+export function Card({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.card, style]}>{children}</View>;
+}
+
+export function TextField({
+  label,
+  error,
+  ...props
+}: { label: string; error?: string } & React.ComponentProps<typeof TextInput>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        {...props}
+        style={[styles.input, focused && styles.inputFocused]}
+        placeholder={props.placeholder ?? label}
+        placeholderTextColor={palette.faint}
+        onFocus={(event) => {
+          setFocused(true);
+          props.onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          props.onBlur?.(event);
+        }}
+      />
+      <Text style={styles.fieldError}>{error}</Text>
+    </View>
+  );
 }
 
 export function Avatar({
@@ -155,60 +231,116 @@ export function Avatar({
 }
 
 export const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8FAFC" },
+  screen: { flex: 1, backgroundColor: palette.bg },
   content: { padding: 20, gap: 16 },
   center: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
     padding: 24,
   },
   muted: {
-    color: "#64748B",
-    fontSize: 15,
-    lineHeight: 22,
+    color: palette.muted,
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
     textAlign: "center",
   },
   error: {
-    color: "#B91C1C",
-    fontSize: 15,
-    lineHeight: 22,
+    color: palette.danger,
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
     textAlign: "center",
   },
   empty: { alignItems: "center", gap: 10, paddingVertical: 44 },
-  emptyTitle: { color: "#0F172A", fontSize: 20, fontWeight: "700" },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: palette.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  emptyTitle: {
+    color: palette.ink,
+    fontSize: type.h2.fontSize,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  emptyAction: { marginTop: 8 },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    backgroundColor: palette.surface,
+    borderRadius: radius.xl,
     padding: 18,
     gap: 10,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+    borderColor: palette.line,
+    ...shadow.card,
   },
-  avatar: { overflow: "hidden", backgroundColor: "#DBEAFE" },
+  avatar: {
+    overflow: "hidden",
+    backgroundColor: palette.primarySoft,
+    borderWidth: 1,
+    borderColor: palette.line,
+  },
   avatarImage: { overflow: "hidden" },
   avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#1D4ED8", fontWeight: "800" },
+  avatarText: { color: palette.primaryDeep, fontWeight: "800" },
   button: {
-    minHeight: 48,
-    borderRadius: 14,
+    minHeight: 52,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 18,
-    backgroundColor: "#2563EB",
+    backgroundColor: palette.primary,
+    ...shadow.raised,
   },
-  secondaryButton: { backgroundColor: "#E2E8F0" },
-  dangerButton: { backgroundColor: "#FEE2E2" },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  secondaryButton: {
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.line,
+    boxShadow: "none",
+  },
+  dangerButton: {
+    backgroundColor: palette.dangerSoft,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    boxShadow: "none",
+  },
+  primaryPressed: {
+    backgroundColor: palette.primaryDeep,
+    transform: [{ scale: 0.97 }],
+  },
+  ghostPressed: { backgroundColor: palette.bg, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.84, transform: [{ scale: 0.985 }] },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+    letterSpacing: -0.2,
     textAlign: "center",
     flexShrink: 1,
   },
-  secondaryText: { color: "#0F172A" },
+  secondaryText: { color: palette.ink },
+  dangerText: { color: palette.danger },
+  field: { gap: 6 },
+  label: { color: palette.body, fontSize: 13, fontWeight: "700" },
+  input: {
+    borderWidth: 1.5,
+    borderColor: palette.line,
+    borderRadius: radius.md,
+    minHeight: 52,
+    paddingHorizontal: 14,
+    color: palette.ink,
+    fontSize: 16,
+    backgroundColor: "#FAFBFE",
+  },
+  inputFocused: { borderColor: palette.primary, backgroundColor: "#FFFFFF" },
+  fieldError: { minHeight: 18, color: palette.danger, fontSize: 12 },
 });

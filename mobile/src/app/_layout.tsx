@@ -5,6 +5,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -25,6 +26,8 @@ import "expo-insights";
 import * as Updates from "expo-updates";
 
 import { env } from "@/config/env";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { palette, radius, type } from "@/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +48,7 @@ export default function RootLayout() {
     >
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
+          <StatusBar style="dark" />
           <RootNavigator />
           <UpdateBanner />
         </SafeAreaProvider>
@@ -73,12 +77,14 @@ function UpdateBanner() {
 
   const onPressUpdate = async () => {
     try {
+      hapticLight();
       setIsProcessing(true);
       if (isUpdatePending) {
         await Updates.reloadAsync();
       } else if (isUpdateAvailable) {
         const result = await Updates.fetchUpdateAsync();
         if (result.isNew) {
+          hapticSuccess();
           await Updates.reloadAsync();
         } else {
           Alert.alert(
@@ -155,8 +161,15 @@ function RootNavigator() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: palette.bg,
+        }}
+      >
+        <ActivityIndicator size="large" color={palette.primary} />
       </View>
     );
   }
@@ -186,30 +199,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#0F172A",
-    borderRadius: 16,
+    backgroundColor: palette.ink,
+    borderRadius: radius.lg,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.35)",
+    boxShadow: "0 8px 24px rgba(11, 18, 32, 0.35)",
   },
   updateTextWrap: { flex: 1, gap: 2 },
-  updateTitle: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  updateTitle: {
+    color: "#FFFFFF",
+    fontSize: type.h3.fontSize,
+    fontWeight: "800",
+  },
   updateMessage: { color: "#CBD5E1", fontSize: 12, lineHeight: 16 },
   updateActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   dismissButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
-  dismissText: { color: "#94A3B8", fontSize: 13, fontWeight: "600" },
+  dismissText: { color: palette.faint, fontSize: 13, fontWeight: "600" },
   updateButton: {
     minWidth: 92,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#2563EB",
+    borderRadius: radius.pill,
+    backgroundColor: palette.primary,
   },
   updateButtonDisabled: { opacity: 0.6 },
   updateButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
