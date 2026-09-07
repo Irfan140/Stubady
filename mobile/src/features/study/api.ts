@@ -27,6 +27,7 @@ import {
   type Page,
   type Source,
   sourceSchema,
+  type StudySet,
   studySetSchema,
   summaryResultSchema,
   summarySchema,
@@ -92,6 +93,13 @@ export function useStudySets() {
 
 export function useStudySet(id: string) {
   const { getToken } = useAuth();
+  const client = useQueryClient();
+  // The list already holds this set's id + title, so render instantly from
+  // cache instead of flashing a bare loader, then confirm in background.
+  const placeholder = client
+    .getQueryData<InfiniteData<Page<StudySet>>>(keys.sets)
+    ?.pages.flatMap((item) => item.data)
+    .find((item) => item.id === id);
   return useQuery({
     queryKey: keys.set(id),
     queryFn: async ({ signal }) =>
@@ -99,6 +107,7 @@ export function useStudySet(id: string) {
         await apiRequest(getToken, `/study-sets/${id}`, { signal }),
       ),
     enabled: Boolean(id),
+    placeholderData: placeholder,
   });
 }
 export function useCreateStudySet() {
