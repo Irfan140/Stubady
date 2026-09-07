@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar, Button, Card, styles as ui } from "@/components/ui";
 import { hapticSelection, hapticWarning } from "@/lib/haptics";
-import { palette, radius, shadow } from "@/theme";
+import { palette, radius } from "@/theme";
 
 export default function Settings() {
   const { signOut } = useClerk();
@@ -55,13 +55,7 @@ export default function Settings() {
         ]}
       >
         <View style={styles.heading}>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>ACCOUNT</Text>
-          </View>
           <Text style={styles.title}>Settings</Text>
-          <Text style={ui.muted}>
-            Manage your profile and study experience.
-          </Text>
         </View>
         <Card style={styles.profileCard}>
           <View style={styles.profileGlow} />
@@ -73,26 +67,29 @@ export default function Settings() {
                 {user?.primaryEmailAddress?.emailAddress ??
                   "No email available"}
               </Text>
-              <View style={styles.memberPill}>
-                <Text style={styles.member}>Studbady learner</Text>
+              <View style={styles.planPill}>
+                <Text style={styles.planText}>Free plan</Text>
               </View>
             </View>
           </View>
         </Card>
-        <MenuRow
-          icon={{ ios: "person.crop.circle", android: "manage_accounts" }}
-          tint={palette.primary}
-          title="Edit profile"
-          subtitle="Name, photo, and account details"
-          onPress={() => router.push("/edit-profile")}
-        />
-        <MenuRow
-          icon={{ ios: "star.circle", android: "workspace_premium" }}
-          tint={palette.accent}
-          title="Premium"
-          subtitle="Subscriptions and premium tools"
-          onPress={() => router.push("/subscriptions")}
-        />
+        <Card style={styles.menuGroup}>
+          <MenuRow
+            icon={{ ios: "person.crop.circle", android: "manage_accounts" }}
+            tint={palette.primary}
+            title="Edit profile"
+            subtitle="Name, photo, and account details"
+            onPress={() => router.push("/edit-profile")}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon={{ ios: "star.circle", android: "workspace_premium" }}
+            tint={palette.accent}
+            title="Premium"
+            subtitle="Subscriptions and premium tools"
+            onPress={() => router.push("/subscriptions")}
+          />
+        </Card>
         <Card>
           <Text style={styles.cardTitle}>About Studbady</Text>
           <Text style={ui.muted}>
@@ -153,20 +150,7 @@ function MenuRow({
 
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 14, paddingBottom: 32 },
-  heading: { gap: 6 },
-  pill: {
-    alignSelf: "flex-start",
-    backgroundColor: palette.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  pillText: {
-    color: palette.primaryDeep,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.4,
-  },
+  heading: { marginBottom: 2 },
   title: {
     color: palette.ink,
     fontSize: 32,
@@ -187,27 +171,31 @@ const styles = StyleSheet.create({
   profileCopy: { flex: 1, gap: 3 },
   name: { color: palette.ink, fontSize: 20, fontWeight: "800" },
   email: { color: palette.muted, fontSize: 14 },
-  memberPill: {
+  planPill: {
     alignSelf: "flex-start",
     marginTop: 4,
-    backgroundColor: palette.primarySoft,
+    backgroundColor: palette.successSoft,
     borderRadius: radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  member: { color: palette.primaryDeep, fontSize: 12, fontWeight: "700" },
+  planText: { color: palette.success, fontSize: 12, fontWeight: "700" },
+  menuGroup: { paddingHorizontal: 6, paddingVertical: 6, gap: 0 },
+  divider: {
+    height: 1,
+    backgroundColor: palette.line,
+    marginLeft: 62,
+    marginRight: 8,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadow.card,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    borderRadius: radius.md,
   },
-  rowPressed: { transform: [{ scale: 0.99 }], backgroundColor: palette.bg },
+  rowPressed: { backgroundColor: palette.bg },
   rowIcon: {
     width: 44,
     height: 44,
