@@ -191,7 +191,7 @@ const FAQS = [
   },
   {
     q: "What happens to my data?",
-    a: "Your study materials belong to you. You can delete sources, study sets, or your whole account at any time — deletion removes them and their generated study material. See the privacy policy for the full details.",
+    a: "Your study materials belong to you. You can delete sources, summaries, study sets, or your whole account at any time — deletion removes them and their generated study material. See the privacy policy for the full details.",
   },
 ];
 

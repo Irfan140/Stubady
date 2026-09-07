@@ -157,9 +157,8 @@ export default function StudySetsScreen() {
         <SymbolView
           name={{ ios: "plus", android: "add" }}
           tintColor="#FFFFFF"
-          size={22}
+          size={26}
         />
-        <Text style={styles.fabText}>New set</Text>
       </Pressable>
     </View>
   );
@@ -184,14 +183,11 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    minHeight: 56,
+    width: 56,
+    height: 56,
     borderRadius: radius.pill,
-    paddingHorizontal: 22,
-    paddingVertical: 8,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
     backgroundColor: palette.primary,
     ...shadow.raised,
   },
@@ -199,7 +195,6 @@ const styles = StyleSheet.create({
     backgroundColor: palette.primaryDeep,
     transform: [{ scale: 0.96 }],
   },
-  fabText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   emptyCta: {
     backgroundColor: palette.primary,
     borderRadius: radius.pill,

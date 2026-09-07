@@ -20,8 +20,8 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
         tabBarStyle: {
           position: "absolute",
-          left: 52,
-          right: 52,
+          left: 40,
+          right: 40,
           bottom: tabBottom,
           height: 68,
           borderRadius: radius.pill,
@@ -62,6 +62,20 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{ android: "settings", ios: "gearshape" }}
+              tintColor={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="premium"
+        options={{
+          title: "Premium",
+          tabBarLabel: "Premium",
+          tabBarIcon: ({ color, size }) => (
+            <SymbolView
+              name={{ android: "workspace_premium", ios: "star.circle" }}
               tintColor={color}
               size={size}
             />
