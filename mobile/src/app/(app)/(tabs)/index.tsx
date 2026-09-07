@@ -93,11 +93,26 @@ export default function StudySetsScreen() {
                     : "Build your first focused study space"}
                 </Text>
               </View>
-              <Avatar
-                imageUrl={user?.imageUrl}
-                name={user?.fullName}
-                size={48}
-              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open settings"
+                accessibilityHint="Go to your account settings"
+                hitSlop={12}
+                onPress={() => {
+                  hapticLight();
+                  router.push("/(app)/(tabs)/settings");
+                }}
+                style={({ pressed }) => [
+                  styles.avatarButton,
+                  pressed && styles.avatarButtonPressed,
+                ]}
+              >
+                <Avatar
+                  imageUrl={user?.imageUrl}
+                  name={user?.fullName}
+                  size={48}
+                />
+              </Pressable>
             </View>
             {sets.length > 0 ? (
               <View style={styles.statsRow}>
@@ -198,6 +213,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   greetingCopy: { flex: 1, gap: 6 },
+  avatarButton: { borderRadius: 24 },
+  avatarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
   pill: {
     alignSelf: "flex-start",
     backgroundColor: palette.primarySoft,

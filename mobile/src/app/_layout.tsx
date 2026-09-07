@@ -6,7 +6,8 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { Stack } from "expo-router";
+import { Stack, useRootNavigationState } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -39,6 +40,10 @@ const queryClient = new QueryClient({
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(Boolean(state.isConnected))),
 );
+
+// Keep the native splash visible until Clerk + the router are ready, so the
+// initial "/" hop never flashes a blank screen after login. Pure JS — OTA-safe.
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   return (
@@ -154,12 +159,21 @@ function UpdateBanner() {
 
 function RootNavigator() {
   const { isLoaded, isSignedIn } = useAuth();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
     if (isLoaded) queryClient.clear();
   }, [isLoaded, isSignedIn]);
 
-  if (!isLoaded) {
+  const ready = isLoaded && navigationState?.key != null;
+
+  useEffect(() => {
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [ready]);
+
+  if (!ready) {
     return (
       <View
         style={{
@@ -176,6 +190,8 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal" }}>
+      {/* Initial route — headerless splash that instantly redirects. */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Protected guard={!isSignedIn}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
