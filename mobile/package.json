@@ -17,7 +17,9 @@
     "build:prev": "eas build --profile preview --platform android",
     "build:prod": "eas build --profile production --platform android",
     "build:dev:github-actions": "eas build --platform android --profile development --local",
-    "eas:credentials": "eas credentials -p android"
+    "eas:credentials": "eas credentials -p android",
+    "update:prod": "eas update --channel production  --environment production",
+    "update:prev": "eas update --channel preview  --environment preview"
   },
   "engines": {
     "node": ">=22"
