@@ -29,6 +29,7 @@ import {
   styles as ui,
 } from "@/components/ui";
 import {
+  useConversation,
   useCreateSource,
   useDecks,
   useDeleteSource,
@@ -59,7 +60,19 @@ export default function StudySetDetail() {
   const createSource = useCreateSource(id);
   const generateSummary = useGenerateSummary(id);
   const generateCards = useGenerateFlashcards(id);
+  const askAi = useConversation(id);
   const deleteSet = useDeleteStudySet();
+  const startChat = () => {
+    askAi.mutate(undefined, {
+      onSuccess: (conversation) =>
+        router.push({
+          pathname: "/chat/[id]",
+          params: { id: conversation.id, studySetId: id },
+        }),
+      onError: (error) =>
+        Alert.alert("Unable to start chat", error.message),
+    });
+  };
   const insets = useSafeAreaInsets();
 
   if (set.isPending) return <LoadingState />;
@@ -147,12 +160,8 @@ export default function StudySetDetail() {
                     <Button
                       title="Ask AI"
                       variant="secondary"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/chat/new",
-                          params: { studySetId: id },
-                        })
-                      }
+                      loading={askAi.isPending}
+                      onPress={startChat}
                     />
                   </View>
                 ) : null}
