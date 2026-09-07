@@ -96,11 +96,11 @@ export default function StudySetDetail() {
     );
 
   return (
-    <KeyboardAvoidingView
-      style={ui.screen}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={90}
-    >
+    // Plain View on purpose: every input on this screen (source sheet, PDF
+    // sheet, flashcard count) already owns a KeyboardAvoidingView. An outer
+    // one can keep a stale shrunken height after popping back from chat,
+    // leaving a blank band under the list.
+    <View style={ui.screen}>
       <Stack.Screen options={{ headerShown: false }} />
       <FlatList<Source>
         contentInsetAdjustmentBehavior="automatic"
@@ -449,7 +449,7 @@ export default function StudySetDetail() {
           onClose={() => setPdfUploadOpen(false)}
         />
       ) : null}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
