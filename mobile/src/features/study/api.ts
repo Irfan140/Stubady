@@ -301,6 +301,21 @@ export function useGenerateSummary(studySetId: string) {
   });
 }
 
+export function useDeleteSummary(studySetId: string) {
+  const { getToken } = useAuth();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (summaryId: string) =>
+      apiRequest<void>(
+        getToken,
+        `/study-sets/${studySetId}/summaries/${summaryId}`,
+        { method: "DELETE" },
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: keys.summaries(studySetId) }),
+  });
+}
+
 export function useDecks(studySetId: string) {
   const { getToken } = useAuth();
   const query = useInfiniteQuery({

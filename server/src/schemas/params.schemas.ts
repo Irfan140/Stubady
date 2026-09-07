@@ -11,3 +11,9 @@ export const deckIdParamSchema = idParamSchema.extend({
 });
 
 export type DeckIdParam = z.infer<typeof deckIdParamSchema>;
+
+export const summaryIdParamSchema = idParamSchema.extend({
+  summaryId: z.string().uuid("summaryId must be a valid identifier"),
+});
+
+export type SummaryIdParam = z.infer<typeof summaryIdParamSchema>;
