@@ -49,7 +49,8 @@ export default function Settings() {
           styles.content,
           {
             paddingTop: Math.max(insets.top, 16) + 8,
-            paddingBottom: Math.max(insets.bottom, 16) + 24,
+            // Clear floating tab bar (68pt + bottom margin) so Sign out stays visible.
+            paddingBottom: Math.max(insets.bottom, 12) + 92,
           },
         ]}
       >
