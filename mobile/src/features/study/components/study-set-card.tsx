@@ -1,13 +1,32 @@
 import { Link } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Card } from "@/components/ui";
 import { hapticSelection } from "@/lib/haptics";
 import { palette, radius } from "@/theme";
+import { useDeleteStudySet } from "../api";
 import type { StudySet } from "../types";
 
 export function StudySetCard({ item }: { item: StudySet }) {
+  const remove = useDeleteStudySet();
+  const confirmDelete = () =>
+    Alert.alert(
+      "Delete study set?",
+      "This removes the study set, its sources, and generated study material.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            remove.mutate(item.id, {
+              onError: (error) =>
+                Alert.alert("Unable to delete study set", error.message),
+            }),
+        },
+      ],
+    );
   return (
     <Link
       href={{ pathname: "/study-set/[id]", params: { id: item.id } }}
@@ -54,6 +73,24 @@ export function StudySetCard({ item }: { item: StudySet }) {
               size={20}
             />
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${item.title}`}
+            hitSlop={10}
+            disabled={remove.isPending}
+            onPress={confirmDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.deletePressed,
+              remove.isPending && styles.deleteDisabled,
+            ]}
+          >
+            <SymbolView
+              name={{ ios: "trash", android: "delete" }}
+              tintColor={palette.danger}
+              size={16}
+            />
+          </Pressable>
         </Card>
       </Pressable>
     </Link>
@@ -71,7 +108,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  copy: { flex: 1, gap: 3 },
+  copy: { flex: 1, gap: 3, paddingRight: 36 },
   title: {
     color: palette.ink,
     fontSize: 17,
@@ -82,5 +119,20 @@ const styles = StyleSheet.create({
   subtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
   meta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   date: { color: palette.faint, fontSize: 12, fontWeight: "600" },
+  deleteButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.dangerSoft,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  deleteDisabled: { opacity: 0.5 },
+  deletePressed: { opacity: 0.7 },
   pressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
 });
