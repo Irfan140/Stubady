@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import {
   ActivityIndicator,
   FlatList,
@@ -81,6 +81,80 @@ const ChatBubble = memo(function ChatBubble({
   );
 });
 
+const Composer = memo(function Composer({
+  control,
+  isPending,
+  bottomInset,
+  onSend,
+}: {
+  control: Control<{ message: string }>;
+  isPending: boolean;
+  bottomInset: number;
+  onSend: () => void;
+}) {
+  // Watched here (not in Chat) so the input stays steady while the AI
+  // streams above it.
+  const draft = useWatch({ control, name: "message" });
+  const canSend = draft.trim().length > 0 && !isPending;
+  return (
+    <View style={[styles.composer, { paddingBottom: bottomInset }]}>
+      <Controller
+        control={control}
+        name="message"
+        render={({ field, fieldState }) => (
+          <View style={styles.inputWrap}>
+            <View
+              style={[
+                styles.inputBox,
+                fieldState.error && styles.inputBoxError,
+              ]}
+            >
+              <TextInput
+                multiline
+                style={styles.input}
+                placeholder="Ask about your notes…"
+                placeholderTextColor={palette.faint}
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                returnKeyType="send"
+                blurOnSubmit={false}
+                onSubmitEditing={onSend}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+                accessibilityState={{ disabled: !canSend }}
+                disabled={!canSend}
+                hitSlop={8}
+                onPress={onSend}
+                style={({ pressed }) => [
+                  styles.sendButton,
+                  !canSend && styles.sendButtonDisabled,
+                  pressed && canSend && styles.sendButtonPressed,
+                ]}
+              >
+                {isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <SymbolView
+                    name={{ android: "arrow_upward", ios: "arrow.up" }}
+                    tintColor="#FFFFFF"
+                    size={20}
+                  />
+                )}
+              </Pressable>
+            </View>
+            {fieldState.error?.message ? (
+              <Text style={styles.error}>{fieldState.error.message}</Text>
+            ) : null}
+          </View>
+        )}
+      />
+    </View>
+  );
+});
+
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -90,7 +164,6 @@ export default function Chat() {
     resolver: zodResolver(schema),
     defaultValues: { message: "" },
   });
-  const draft = form.watch("message");
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
 
   // Drop optimistic copies once the server echo arrives — keyed on content so
@@ -172,6 +245,9 @@ export default function Chat() {
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const handleSend = useCallback(() => {
+    void form.handleSubmit(submit)();
+  }, [form, submit]);
 
   if (messages.isPending) return <LoadingState label="Loading conversation…" />;
   if (messages.isError)
@@ -183,8 +259,6 @@ export default function Chat() {
         }}
       />
     );
-
-  const canSend = draft.trim().length > 0 && !send.isPending;
 
   return (
     <SafeAreaView edges={["bottom"]} style={ui.screen}>
@@ -200,8 +274,6 @@ export default function Chat() {
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-          removeClippedSubviews
           initialNumToRender={20}
           maxToRenderPerBatch={12}
           windowSize={7}
@@ -246,68 +318,12 @@ export default function Chat() {
             <ChatBubble item={item} streaming={item.id === "streaming-reply"} />
           )}
         />
-        <View
-          style={[
-            styles.composer,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
-        >
-          <Controller
-            control={form.control}
-            name="message"
-            render={({ field, fieldState }) => (
-              <View style={styles.inputWrap}>
-                <View
-                  style={[
-                    styles.inputBox,
-                    fieldState.error && styles.inputBoxError,
-                  ]}
-                >
-                  <TextInput
-                    multiline
-                    style={styles.input}
-                    placeholder="Ask about your notes…"
-                    placeholderTextColor={palette.faint}
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    returnKeyType="send"
-                    blurOnSubmit={false}
-                    onSubmitEditing={() => {
-                      void form.handleSubmit(submit)();
-                    }}
-                  />
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Send message"
-                    accessibilityState={{ disabled: !canSend }}
-                    disabled={!canSend}
-                    hitSlop={8}
-                    onPress={form.handleSubmit(submit)}
-                    style={({ pressed }) => [
-                      styles.sendButton,
-                      !canSend && styles.sendButtonDisabled,
-                      pressed && canSend && styles.sendButtonPressed,
-                    ]}
-                  >
-                    {send.isPending ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <SymbolView
-                        name={{ android: "arrow_upward", ios: "arrow.up" }}
-                        tintColor="#FFFFFF"
-                        size={20}
-                      />
-                    )}
-                  </Pressable>
-                </View>
-                {fieldState.error?.message ? (
-                  <Text style={styles.error}>{fieldState.error.message}</Text>
-                ) : null}
-              </View>
-            )}
-          />
-        </View>
+        <Composer
+          control={form.control}
+          isPending={send.isPending}
+          bottomInset={Math.max(insets.bottom, 12)}
+          onSend={handleSend}
+        />
         {send.isError ? (
           <Text style={styles.sendError} selectable>
             {send.error.message}

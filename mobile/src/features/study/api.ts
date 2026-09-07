@@ -456,6 +456,10 @@ export function useSendMessage(conversationId: string) {
   const client = useQueryClient();
   const [streamingReply, setStreamingReply] = useState("");
   const streamController = useRef<AbortController | null>(null);
+  // Tokens can arrive dozens of times per second; painting every one makes
+  // the whole screen churn. Accumulate and flush to UI at most ~8x/sec —
+  // `done` always flushes the final text so nothing gets stuck.
+  const lastFlush = useRef(0);
   useEffect(
     () => () => {
       streamController.current?.abort();
@@ -478,7 +482,11 @@ export function useSendMessage(conversationId: string) {
           (event) => {
             if (event.type === "token") {
               result += event.text;
-              setStreamingReply(result);
+              const now = Date.now();
+              if (now - lastFlush.current > 120) {
+                lastFlush.current = now;
+                setStreamingReply(result);
+              }
             }
             if (event.type === "sources") sources = event.sources;
             if (event.type === "done") {
