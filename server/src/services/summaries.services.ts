@@ -2,7 +2,10 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 import { PROMPT_VERSIONS } from "../config/constants";
 import { chatModel, chatModelId } from "../lib/ai";
-import { insertSummary } from "../repositories/summaries.repositories";
+import {
+  deleteSummaryForUser,
+  insertSummary,
+} from "../repositories/summaries.repositories";
 import { findStudySetForUser } from "../repositories/study-sets.repositories";
 import { HttpError } from "../utils/http-error.utils";
 import { messageText } from "../utils/message-text.utils";
@@ -53,6 +56,16 @@ export const createSummary = async (
   });
 
   return { id: summary.id, content: text };
+};
+
+export const deleteSummary = async (
+  userId: string,
+  studySetId: string,
+  summaryId: string,
+): Promise<void> => {
+  await getStudySetOrThrow(studySetId, userId);
+  const deleted = await deleteSummaryForUser(studySetId, summaryId, userId);
+  if (!deleted) throw new HttpError(404, "Summary not found");
 };
 
 export const listSummaries = async (

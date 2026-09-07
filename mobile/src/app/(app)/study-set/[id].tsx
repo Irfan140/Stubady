@@ -1,4 +1,5 @@
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -59,6 +60,7 @@ export default function StudySetDetail() {
   const generateSummary = useGenerateSummary(id);
   const generateCards = useGenerateFlashcards(id);
   const deleteSet = useDeleteStudySet();
+  const insets = useSafeAreaInsets();
 
   if (set.isPending) return <LoadingState />;
   if (set.isError)
@@ -86,11 +88,17 @@ export default function StudySetDetail() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={90}
     >
-      <Stack.Screen options={{ title: set.data.title }} />
+      <Stack.Screen options={{ headerShown: false }} />
       <FlatList<Source>
         contentInsetAdjustmentBehavior="automatic"
         style={ui.screen}
-        contentContainerStyle={ui.content}
+        contentContainerStyle={[
+          ui.content,
+          {
+            paddingTop: Math.max(insets.top, 12) + 4,
+            paddingBottom: Math.max(insets.bottom, 16) + 24,
+          },
+        ]}
         data={sources.items}
         keyExtractor={(item) => item.id}
         onEndReached={() => {
@@ -100,27 +108,56 @@ export default function StudySetDetail() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={ui.muted}>
-              Build a focused revision space from your own material.
-            </Text>
-            <View style={styles.actions}>
-              <Button
-                title="+ Add source"
-                onPress={() => setSourcePickerOpen(true)}
-              />
-              {sources.items.length > 0 ? (
-                <Button
-                  title="Ask AI"
-                  variant="secondary"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/chat/new",
-                      params: { studySetId: id },
-                    })
-                  }
+            <View style={styles.navBar}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                hitSlop={12}
+                onPress={() => router.back()}
+                style={({ pressed }) => [
+                  styles.backButton,
+                  pressed && styles.backButtonPressed,
+                ]}
+              >
+                <SymbolView
+                  name={{ ios: "chevron.left", android: "arrow_back" }}
+                  tintColor="#0F172A"
+                  size={22}
                 />
-              ) : null}
+              </Pressable>
+              <Text numberOfLines={1} style={styles.navTitle}>
+                {set.data.title}
+              </Text>
+              <View style={styles.navSpacer} />
             </View>
+            <Card style={styles.hero}>
+              <Text style={styles.heroTitle}>{set.data.title}</Text>
+              <Text style={styles.heroSubtitle}>
+                Build a focused revision space from your own material.
+              </Text>
+              <View style={styles.actions}>
+                <View style={styles.actionFlex}>
+                  <Button
+                    title="+ Add source"
+                    onPress={() => setSourcePickerOpen(true)}
+                  />
+                </View>
+                {sources.items.length > 0 ? (
+                  <View style={styles.actionFlex}>
+                    <Button
+                      title="Ask AI"
+                      variant="secondary"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/chat/new",
+                          params: { studySetId: id },
+                        })
+                      }
+                    />
+                  </View>
+                ) : null}
+              </View>
+            </Card>
             <SectionTitle title="Sources" />
           </View>
         }
@@ -172,7 +209,26 @@ export default function StudySetDetail() {
                     title="Generate summary"
                     loading={generateSummary.isPending}
                     onPress={() => {
-                      generateSummary.mutate();
+                      generateSummary.mutate(undefined, {
+                        onSuccess: () => {
+                          Alert.alert(
+                            "Summary ready",
+                            "View the generated summary now?",
+                            [
+                              { text: "Later", style: "cancel" },
+                              {
+                                text: "View",
+                                onPress: () => setSummaryOpen(true),
+                              },
+                            ],
+                          );
+                        },
+                        onError: (error) =>
+                          Alert.alert(
+                            "Unable to generate summary",
+                            error.message,
+                          ),
+                      });
                     }}
                   />
                   <Button
@@ -229,6 +285,24 @@ export default function StudySetDetail() {
                       try {
                         const result = await generateCards.mutateAsync(count);
                         setGeneratedDeckId(result.deckId);
+                        Alert.alert(
+                          "Deck ready",
+                          "View the generated flashcards now?",
+                          [
+                            { text: "Later", style: "cancel" },
+                            {
+                              text: "Review",
+                              onPress: () =>
+                                router.push({
+                                  pathname: "/deck/[id]",
+                                  params: {
+                                    id: result.deckId,
+                                    studySetId: id,
+                                  },
+                                }),
+                            },
+                          ],
+                        );
                       } catch {
                         /* the mutation error is shown below */
                       }
@@ -269,53 +343,56 @@ export default function StudySetDetail() {
                 </>
               )}
             </Card>
-            <Button
-              title="Edit study-set title"
-              variant="secondary"
-              onPress={() =>
-                router.push({
-                  pathname: "/study-set/[id]/edit",
-                  params: { id },
-                })
-              }
-            />
-            <Button
-              title="View chat history"
-              variant="secondary"
-              onPress={() =>
-                router.push({
-                  pathname: "/study-set/[id]/conversations",
-                  params: { id },
-                })
-              }
-            />
-            <Button
-              title="Delete study set"
-              variant="danger"
-              onPress={() =>
-                Alert.alert(
-                  "Delete study set?",
-                  "This removes the study set, its sources, and generated study material.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () =>
-                        deleteSet.mutate(id, {
-                          onSuccess: () => router.replace("/(app)/(tabs)"),
-                          onError: (error) =>
-                            Alert.alert(
-                              "Unable to delete study set",
-                              error.message,
-                            ),
-                        }),
-                    },
-                  ],
-                )
-              }
-              loading={deleteSet.isPending}
-            />
+            <Card style={styles.manage}>
+              <Text style={styles.cardTitle}>Manage</Text>
+              <Button
+                title="Edit study-set title"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/study-set/[id]/edit",
+                    params: { id },
+                  })
+                }
+              />
+              <Button
+                title="View chat history"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/study-set/[id]/conversations",
+                    params: { id },
+                  })
+                }
+              />
+              <Button
+                title="Delete study set"
+                variant="danger"
+                onPress={() =>
+                  Alert.alert(
+                    "Delete study set?",
+                    "This removes the study set, its sources, and generated study material.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () =>
+                          deleteSet.mutate(id, {
+                            onSuccess: () => router.replace("/(app)/(tabs)"),
+                            onError: (error) =>
+                              Alert.alert(
+                                "Unable to delete study set",
+                                error.message,
+                              ),
+                          }),
+                      },
+                    ],
+                  )
+                }
+                loading={deleteSet.isPending}
+              />
+            </Card>
             {generateSummary.isError ? (
               <Text style={styles.error} selectable>
                 {generateSummary.error.message}
@@ -570,11 +647,35 @@ function SourceEntryModal({
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 10 },
+  header: { gap: 12 },
   preview: { color: "#334155", fontSize: 15, lineHeight: 22 },
   footer: { gap: 12, paddingTop: 8 },
   title: { color: "#0F172A", fontSize: 30, fontWeight: "800" },
-  actions: { flexDirection: "column", gap: 10 },
+  navBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 2,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6EAF2",
+  },
+  backButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+  navTitle: { flex: 1, color: "#0F172A", fontSize: 17, fontWeight: "700" },
+  navSpacer: { width: 40 },
+  hero: { gap: 10 },
+  heroTitle: { color: "#0F172A", fontSize: 24, fontWeight: "800" },
+  heroSubtitle: { color: "#64748B", fontSize: 14, lineHeight: 20 },
+  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  actionFlex: { flex: 1 },
+  manage: { gap: 10 },
   sourceActions: { flexDirection: "column", gap: 8 },
   section: { color: "#0F172A", fontSize: 21, fontWeight: "800", marginTop: 8 },
   sourceHeader: {

@@ -2,8 +2,15 @@ import { Router } from "express";
 
 import { aiLimiter } from "../middlewares/rate-limits.middlewares";
 import { validate } from "../middlewares/validate.middlewares";
-import { idParamSchema } from "../schemas/params.schemas";
-import { createSummary, listSummaries } from "../services/summaries.services";
+import {
+  idParamSchema,
+  summaryIdParamSchema,
+} from "../schemas/params.schemas";
+import {
+  createSummary,
+  deleteSummary,
+  listSummaries,
+} from "../services/summaries.services";
 import { parsePagination } from "../utils/pagination.utils";
 
 export const summariesRouter = Router();
@@ -26,5 +33,17 @@ summariesRouter.get(
       parsePagination(req.query as { limit?: string; cursor?: string }),
     );
     res.json(result);
+  },
+);
+summariesRouter.delete(
+  "/:id/summaries/:summaryId",
+  validate(summaryIdParamSchema, "params"),
+  async (req, res) => {
+    await deleteSummary(
+      req.userId!,
+      req.params.id as string,
+      req.params.summaryId as string,
+    );
+    res.status(204).end();
   },
 );

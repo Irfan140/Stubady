@@ -1,10 +1,16 @@
 import { Tabs } from "expo-router";
+
 import { SymbolView } from "expo-symbols";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { hapticSelection } from "@/lib/haptics";
-import { palette } from "@/theme";
+import { palette, radius, shadow } from "@/theme";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  // Floating rounded bar — bottom margin respects the system gesture area
+  // so content and OS buttons are never covered. Pure JS style, OTA-safe.
+  const tabBottom = Math.max(insets.bottom, 12);
   return (
     <Tabs
       screenOptions={{
@@ -13,12 +19,19 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
         tabBarStyle: {
-          backgroundColor: palette.surface,
-          borderTopColor: palette.line,
-          borderTopWidth: 1,
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: tabBottom,
           height: 68,
+          borderRadius: radius.xl,
+          backgroundColor: palette.surface,
+          borderWidth: 1,
+          borderColor: palette.line,
+          borderTopWidth: 1,
           paddingTop: 8,
-          paddingBottom: 12,
+          paddingBottom: 10,
+          ...shadow.card,
         },
       }}
       screenListeners={{

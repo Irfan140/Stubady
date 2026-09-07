@@ -29,6 +29,17 @@ export type SummaryListItem = {
   createdAt: Date;
 };
 
+export const deleteSummaryForUser = async (
+  studySetId: string,
+  summaryId: string,
+  userId: string,
+): Promise<boolean> => {
+  const res = await prisma.summary.deleteMany({
+    where: { id: summaryId, studySetId, userId },
+  });
+  return res.count > 0;
+};
+
 export const listSummariesForUser = async (
   studySetId: string,
   userId: string,

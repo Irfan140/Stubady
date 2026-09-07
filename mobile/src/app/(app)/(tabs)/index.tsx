@@ -59,7 +59,8 @@ export default function StudySetsScreen() {
           ui.content,
           {
             paddingTop: Math.max(insets.top, 16) + 8,
-            paddingBottom: 120,
+            // Clear floating tab bar (68 + bottom margin) plus FAB overlay.
+            paddingBottom: Math.max(insets.bottom, 12) + 160,
             flexGrow: sets.length === 0 ? 1 : undefined,
           },
         ]}
@@ -83,15 +84,7 @@ export default function StudySetsScreen() {
           <View style={styles.header}>
             <View style={styles.greetingRow}>
               <View style={styles.greetingCopy}>
-                <View style={styles.pill}>
-                  <Text style={styles.pillText}>YOUR LIBRARY</Text>
-                </View>
                 <Text style={styles.title}>Hey {firstName} 👋</Text>
-                <Text style={styles.subtitle}>
-                  {sets.length
-                    ? `${sets.length} ${sets.length === 1 ? "set" : "sets"} in your library`
-                    : "Build your first focused study space"}
-                </Text>
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -114,40 +107,6 @@ export default function StudySetsScreen() {
                 />
               </Pressable>
             </View>
-            {sets.length > 0 ? (
-              <View style={styles.statsRow}>
-                <View style={styles.stat}>
-                  <SymbolView
-                    name={{ ios: "square.stack.3d.up", android: "style" }}
-                    tintColor={palette.primary}
-                    size={20}
-                  />
-                  <Text style={styles.statValue}>{sets.length}</Text>
-                  <Text style={styles.statLabel}>Sets</Text>
-                </View>
-                <View style={styles.stat}>
-                  <SymbolView
-                    name={{ ios: "sparkles", android: "auto_awesome" }}
-                    tintColor={palette.accent}
-                    size={20}
-                  />
-                  <Text style={styles.statValue}>AI</Text>
-                  <Text style={styles.statLabel}>Summaries</Text>
-                </View>
-                <View style={styles.stat}>
-                  <SymbolView
-                    name={{
-                      ios: "bubble.left.and.bubble.right",
-                      android: "chat_bubble",
-                    }}
-                    tintColor={palette.success}
-                    size={20}
-                  />
-                  <Text style={styles.statValue}>Chat</Text>
-                  <Text style={styles.statLabel}>Tutor</Text>
-                </View>
-              </View>
-            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -190,7 +149,8 @@ export default function StudySetsScreen() {
         }}
         style={({ pressed }) => [
           styles.fab,
-          { bottom: Math.max(insets.bottom, 12) + 64 },
+          // Sit above the floating tab bar (68pt + bottom margin) with a gap.
+          { bottom: Math.max(insets.bottom, 12) + 80 },
           pressed && styles.fabPressed,
         ]}
       >
@@ -206,60 +166,31 @@ export default function StudySetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 14, marginBottom: 6 },
+  header: { marginBottom: 4 },
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  greetingCopy: { flex: 1, gap: 6 },
+  greetingCopy: { flex: 1, justifyContent: "center" },
   avatarButton: { borderRadius: 24 },
   avatarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
-  pill: {
-    alignSelf: "flex-start",
-    backgroundColor: palette.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  pillText: {
-    color: palette.primaryDeep,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.4,
-  },
   title: {
     color: palette.ink,
     fontSize: type.title.fontSize,
     fontWeight: "800",
     letterSpacing: type.title.letterSpacing,
   },
-  subtitle: {
-    color: palette.muted,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    padding: 12,
-    ...shadow.card,
-  },
-  stat: { flex: 1, alignItems: "center", gap: 2 },
-  statValue: { color: palette.ink, fontSize: 16, fontWeight: "800" },
-  statLabel: { color: palette.faint, fontSize: 11, fontWeight: "700" },
   fab: {
     position: "absolute",
     right: 20,
     minHeight: 56,
-    borderRadius: 28,
-    paddingHorizontal: 20,
+    borderRadius: radius.pill,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     backgroundColor: palette.primary,
     ...shadow.raised,

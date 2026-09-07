@@ -7,25 +7,7 @@ import { hapticSelection } from "@/lib/haptics";
 import { palette, radius } from "@/theme";
 import type { StudySet } from "../types";
 
-const palettes = [
-  { tint: "#EEF0FE", accent: "#4F46E5", badge: "#E0E4FF" },
-  { tint: "#E9FAF5", accent: "#0F766E", badge: "#CBF3E6" },
-  { tint: "#FFF4E8", accent: "#C2410C", badge: "#FFE6CC" },
-  { tint: "#FAF0FE", accent: "#A21CAF", badge: "#F5DDFB" },
-  { tint: "#F3F9E4", accent: "#4D7C0F", badge: "#E4F4C6" },
-  { tint: "#FDEEF1", accent: "#BE123C", badge: "#FBDCE2" },
-];
-
-function paletteFor(id: string) {
-  const hash = [...id].reduce(
-    (total, character) => total + character.charCodeAt(0),
-    0,
-  );
-  return palettes[hash % palettes.length];
-}
-
 export function StudySetCard({ item }: { item: StudySet }) {
-  const paletteChoice = paletteFor(item.id);
   return (
     <Link
       href={{ pathname: "/study-set/[id]", params: { id: item.id } }}
@@ -37,40 +19,40 @@ export function StudySetCard({ item }: { item: StudySet }) {
         onPressIn={() => hapticSelection()}
         style={({ pressed }) => [pressed && styles.pressed]}
       >
-        <Card>
-          <View
-            style={[styles.cardTop, { backgroundColor: paletteChoice.tint }]}
-          >
-            <View
-              style={[styles.badge, { backgroundColor: paletteChoice.badge }]}
-            >
-              <Text style={[styles.badgeText, { color: paletteChoice.accent }]}>
-                STUDY SET
+        <Card style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.iconWrap}>
+              <SymbolView
+                name={{ ios: "books.vertical", android: "library_books" }}
+                tintColor={palette.primary}
+                size={22}
+              />
+            </View>
+            <View style={styles.copy}>
+              <Text selectable numberOfLines={2} style={styles.title}>
+                {item.title}
               </Text>
+              <Text numberOfLines={1} style={styles.subtitle}>
+                Sources, summaries, and flashcards
+              </Text>
+              <View style={styles.meta}>
+                <SymbolView
+                  name={{ ios: "calendar", android: "calendar_month" }}
+                  tintColor={palette.faint}
+                  size={12}
+                />
+                <Text style={styles.date}>
+                  {item.createdAt
+                    ? `Created ${item.createdAt.toLocaleDateString()}`
+                    : "Ready to learn"}
+                </Text>
+              </View>
             </View>
             <SymbolView
               name={{ ios: "chevron.right", android: "chevron_right" }}
-              tintColor={paletteChoice.accent}
-              size={22}
+              tintColor={palette.faint}
+              size={20}
             />
-          </View>
-          <View style={styles.body}>
-            <Text selectable numberOfLines={2} style={styles.title}>
-              {item.title}
-            </Text>
-            <Text style={styles.subtitle}>
-              Sources, summaries, and flashcards
-            </Text>
-            <View style={styles.meta}>
-              <View
-                style={[styles.dot, { backgroundColor: paletteChoice.accent }]}
-              />
-              <Text style={styles.date}>
-                {item.createdAt
-                  ? `Created ${item.createdAt.toLocaleDateString()}`
-                  : "Ready to learn"}
-              </Text>
-            </View>
           </View>
         </Card>
       </Pressable>
@@ -79,34 +61,26 @@ export function StudySetCard({ item }: { item: StudySet }) {
 }
 
 const styles = StyleSheet.create({
-  cardTop: {
-    minHeight: 52,
-    margin: -18,
-    marginBottom: 2,
-    paddingHorizontal: 16,
-    flexDirection: "row",
+  card: { padding: 16 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: palette.primarySoft,
     alignItems: "center",
-    justifyContent: "space-between",
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    justifyContent: "center",
   },
-  badge: {
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  badgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 1.1 },
-  body: { gap: 6, paddingTop: 4 },
+  copy: { flex: 1, gap: 3 },
   title: {
     color: palette.ink,
-    fontSize: 19,
-    lineHeight: 25,
+    fontSize: 17,
+    lineHeight: 23,
     fontWeight: "800",
     letterSpacing: -0.3,
   },
-  subtitle: { color: palette.muted, fontSize: 14, lineHeight: 20 },
-  meta: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 4 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
+  subtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
+  meta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   date: { color: palette.faint, fontSize: 12, fontWeight: "600" },
   pressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
 });
