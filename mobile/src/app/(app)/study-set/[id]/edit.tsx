@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
@@ -16,9 +17,11 @@ import {
   Card,
   ErrorState,
   LoadingState,
-  styles as ui,
+  useUiStyles,
 } from "@/components/ui";
 import { useStudySet, useUpdateStudySet } from "@/features/study/api";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 const schema = z.object({
   title: z.string().trim().min(1, "Add a title").max(200),
@@ -33,6 +36,9 @@ export default function EditStudySet() {
     resolver: zodResolver(schema),
     values: { title: current.data?.title ?? "" },
   });
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   if (current.isPending) return <LoadingState />;
   if (current.isError) return <ErrorState message={current.error.message} />;
   const submit = async ({ title }: Input) => {
@@ -85,16 +91,17 @@ export default function EditStudySet() {
     </KeyboardAvoidingView>
   );
 }
-const styles = StyleSheet.create({
-  title: { color: "#0F172A", fontSize: 28, fontWeight: "800" },
-  input: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    color: "#0F172A",
-    fontSize: 16,
-  },
-  error: { minHeight: 18, color: "#B91C1C", fontSize: 12 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    title: { color: palette.ink, fontSize: 28, fontWeight: "800" },
+    input: {
+      minHeight: 50,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      color: palette.ink,
+      fontSize: 16,
+    },
+    error: { minHeight: 18, color: palette.danger, fontSize: 12 },
+  });

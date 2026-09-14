@@ -1,7 +1,13 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-function inlineMarkdown(value: string): ReactNode[] {
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
+
+function inlineMarkdown(
+  value: string,
+  styles: ReturnType<typeof makeStyles>,
+): ReactNode[] {
   return value
     .split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\*[^*]+\*|_[^_]+_)/g)
     .filter(Boolean)
@@ -35,6 +41,8 @@ function inlineMarkdown(value: string): ReactNode[] {
 }
 
 export function MarkdownText({ children }: { children: string }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const lines = children.replace(/\r\n/g, "\n").split("\n");
   const blocks: ReactNode[] = [];
   let paragraph: string[] = [];
@@ -44,7 +52,7 @@ export function MarkdownText({ children }: { children: string }) {
     if (!paragraph.length) return;
     blocks.push(
       <Text key={`p-${blocks.length}`} style={styles.paragraph} selectable>
-        {inlineMarkdown(paragraph.join(" "))}
+        {inlineMarkdown(paragraph.join(" "), styles)}
       </Text>,
     );
     paragraph = [];
@@ -78,7 +86,7 @@ export function MarkdownText({ children }: { children: string }) {
           style={[styles.heading, heading[1].length > 1 && styles.subheading]}
           selectable
         >
-          {inlineMarkdown(heading[2])}
+          {inlineMarkdown(heading[2], styles)}
         </Text>,
       );
       return;
@@ -90,7 +98,7 @@ export function MarkdownText({ children }: { children: string }) {
         <View key={`b-${index}`} style={styles.listRow}>
           <Text style={styles.bullet}>•</Text>
           <Text style={styles.listText} selectable>
-            {inlineMarkdown(bullet[1])}
+            {inlineMarkdown(bullet[1], styles)}
           </Text>
         </View>,
       );
@@ -103,7 +111,7 @@ export function MarkdownText({ children }: { children: string }) {
         <View key={`o-${index}`} style={styles.listRow}>
           <Text style={styles.number}>{ordered[1]}.</Text>
           <Text style={styles.listText} selectable>
-            {inlineMarkdown(ordered[2])}
+            {inlineMarkdown(ordered[2], styles)}
           </Text>
         </View>,
       );
@@ -127,40 +135,41 @@ export function MarkdownText({ children }: { children: string }) {
   return <View style={styles.container}>{blocks}</View>;
 }
 
-const styles = StyleSheet.create({
-  container: { gap: 10 },
-  paragraph: { color: "#334155", fontSize: 16, lineHeight: 25 },
-  heading: {
-    color: "#0F172A",
-    fontSize: 23,
-    lineHeight: 30,
-    fontWeight: "800",
-  },
-  subheading: { fontSize: 19, lineHeight: 26 },
-  strong: { fontWeight: "800" },
-  emphasis: { fontStyle: "italic" },
-  code: {
-    color: "#BE185D",
-    backgroundColor: "#FCE7F3",
-    fontFamily: "monospace",
-  },
-  codeBlock: {
-    color: "#E2E8F0",
-    backgroundColor: "#0F172A",
-    borderRadius: 10,
-    padding: 12,
-    fontFamily: "monospace",
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  listRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
-  bullet: { color: "#4F46E5", fontSize: 20, lineHeight: 25 },
-  number: {
-    color: "#4F46E5",
-    fontSize: 15,
-    lineHeight: 25,
-    fontWeight: "700",
-    minWidth: 22,
-  },
-  listText: { flex: 1, color: "#334155", fontSize: 16, lineHeight: 25 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    container: { gap: 10 },
+    paragraph: { color: palette.body, fontSize: 16, lineHeight: 25 },
+    heading: {
+      color: palette.ink,
+      fontSize: 23,
+      lineHeight: 30,
+      fontWeight: "800",
+    },
+    subheading: { fontSize: 19, lineHeight: 26 },
+    strong: { fontWeight: "800" },
+    emphasis: { fontStyle: "italic" },
+    code: {
+      color: "#BE185D",
+      backgroundColor: "#FCE7F3",
+      fontFamily: "monospace",
+    },
+    codeBlock: {
+      color: "#E2E8F0",
+      backgroundColor: "#0F172A",
+      borderRadius: 10,
+      padding: 12,
+      fontFamily: "monospace",
+      fontSize: 13,
+      lineHeight: 20,
+    },
+    listRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
+    bullet: { color: palette.primary, fontSize: 20, lineHeight: 25 },
+    number: {
+      color: palette.primary,
+      fontSize: 15,
+      lineHeight: 25,
+      fontWeight: "700",
+      minWidth: 22,
+    },
+    listText: { flex: 1, color: palette.body, fontSize: 16, lineHeight: 25 },
+  });

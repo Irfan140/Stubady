@@ -59,8 +59,6 @@ const envSchema = z
     OPENAI_CHAT_MODEL: z.string().min(1).default("gpt-4o-mini"),
     OPENAI_EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
 
-    REVENUECAT_SECRET_API_KEY: z.string().trim().default(""),
-
     FIRECRAWL_API_KEY: z.string().min(1),
 
     R2_ACCOUNT_ID: z.string().trim().min(1),
@@ -106,7 +104,6 @@ export const env = {
   openaiApiKey: parsed.data.OPENAI_API_KEY,
   chatModel: parsed.data.OPENAI_CHAT_MODEL,
   embeddingModel: parsed.data.OPENAI_EMBEDDING_MODEL,
-  revenueCatSecretApiKey: parsed.data.REVENUECAT_SECRET_API_KEY,
   firecrawlApiKey: parsed.data.FIRECRAWL_API_KEY,
   r2AccountId: parsed.data.R2_ACCOUNT_ID,
   r2Endpoint:

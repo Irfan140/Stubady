@@ -1,10 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { z } from "zod";
 
 import { Button, Card } from "@/components/ui";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 const schema = z.discriminatedUnion("type", [
   z.object({
@@ -30,6 +32,8 @@ export function SourceForm({
   onDone: () => void;
   initialType?: Input["type"];
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const [type, setType] = useState<Input["type"]>(initialType);
   const form = useForm<Input>({
     resolver: zodResolver(schema),
@@ -120,17 +124,18 @@ export function SourceForm({
     </Card>
   );
 }
-const styles = StyleSheet.create({
-  label: { color: "#0F172A", fontWeight: "700" },
-  switcher: { flexDirection: "row", gap: 8 },
-  input: {
-    minHeight: 100,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 12,
-    padding: 12,
-    textAlignVertical: "top",
-    color: "#0F172A",
-  },
-  error: { minHeight: 18, color: "#B91C1C", fontSize: 12 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    label: { color: palette.ink, fontWeight: "700" },
+    switcher: { flexDirection: "row", gap: 8 },
+    input: {
+      minHeight: 100,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 12,
+      padding: 12,
+      textAlignVertical: "top",
+      color: palette.ink,
+    },
+    error: { minHeight: 18, color: palette.danger, fontSize: 12 },
+  });

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import { useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +12,8 @@ import {
 import { z } from "zod";
 
 import { Button } from "@/components/ui";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 const flashcardCountSchema = z.object({
   count: z
@@ -34,6 +37,8 @@ export function FlashcardCountForm({
   disabled?: boolean;
   onSubmit: (count: number) => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const form = useForm<
     z.input<typeof flashcardCountSchema>,
     unknown,
@@ -85,22 +90,23 @@ export function FlashcardCountForm({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: 8 },
-  label: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
-  row: { flexDirection: "row", alignItems: "center", gap: 10 },
-  input: {
-    width: 72,
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 14,
-    color: "#0F172A",
-    fontSize: 16,
-    textAlign: "center",
-  },
-  hint: { color: "#64748B", fontSize: 13 },
-  error: { color: "#B91C1C", fontSize: 13 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    container: { gap: 8 },
+    label: { color: palette.ink, fontSize: 15, fontWeight: "700" },
+    row: { flexDirection: "row", alignItems: "center", gap: 10 },
+    input: {
+      width: 72,
+      height: 48,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 14,
+      backgroundColor: palette.surface,
+      paddingHorizontal: 14,
+      color: palette.ink,
+      fontSize: 16,
+      textAlign: "center",
+    },
+    hint: { color: palette.muted, fontSize: 13 },
+    error: { color: palette.danger, fontSize: 13 },
+  });

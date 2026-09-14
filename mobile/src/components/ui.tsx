@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Image as ExpoImage } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -14,7 +14,8 @@ import {
 } from "react-native";
 
 import { hapticLight } from "@/lib/haptics";
-import { palette, radius, shadow, type } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow, type, type Palette } from "@/theme";
 
 export function Screen({
   children,
@@ -23,20 +24,24 @@ export function Screen({
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { isDark } = useTheme();
+  const ui = useUiStyles();
   return (
-    <View style={[styles.screen, style]}>
-      <StatusBar style="dark" />
+    <View style={[ui.screen, style]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       {children}
     </View>
   );
 }
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
+  const { isDark, palette } = useTheme();
+  const ui = useUiStyles();
   return (
-    <View style={[styles.screen, styles.center]}>
-      <StatusBar style="dark" />
+    <View style={[ui.screen, ui.center]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <ActivityIndicator color={palette.primary} size="large" />
-      <Text style={styles.muted}>{label}</Text>
+      <Text style={ui.muted}>{label}</Text>
     </View>
   );
 }
@@ -48,10 +53,12 @@ export function ErrorState({
   message: string;
   onRetry?: () => void;
 }) {
+  const { isDark } = useTheme();
+  const ui = useUiStyles();
   return (
-    <View style={[styles.screen, styles.center]}>
-      <StatusBar style="dark" />
-      <Text style={styles.error}>{message}</Text>
+    <View style={[ui.screen, ui.center]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Text style={ui.error}>{message}</Text>
       {onRetry ? (
         <Button title="Try again" onPress={onRetry} variant="secondary" />
       ) : null}
@@ -70,12 +77,13 @@ export function EmptyState({
   action?: ReactNode;
   icon?: ReactNode;
 }) {
+  const ui = useUiStyles();
   return (
-    <View style={styles.empty}>
-      {icon ? <View style={styles.emptyIcon}>{icon}</View> : null}
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.muted}>{message}</Text>
-      {action ? <View style={styles.emptyAction}>{action}</View> : null}
+    <View style={ui.empty}>
+      {icon ? <View style={ui.emptyIcon}>{icon}</View> : null}
+      <Text style={ui.emptyTitle}>{title}</Text>
+      <Text style={ui.muted}>{message}</Text>
+      {action ? <View style={ui.emptyAction}>{action}</View> : null}
     </View>
   );
 }
@@ -95,6 +103,8 @@ export function Button({
   variant?: "primary" | "secondary" | "danger";
   icon?: ReactNode;
 }) {
+  const { palette } = useTheme();
+  const styles = useUiStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -119,7 +129,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? "#FFFFFF" : palette.ink}
+          color={variant === "primary" ? palette.onPrimary : palette.ink}
         />
       ) : (
         <View style={styles.buttonRow}>
@@ -149,7 +159,8 @@ export function Card({
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const ui = useUiStyles();
+  return <View style={[ui.card, style]}>{children}</View>;
 }
 
 export function TextField({
@@ -157,6 +168,8 @@ export function TextField({
   error,
   ...props
 }: { label: string; error?: string } & React.ComponentProps<typeof TextInput>) {
+  const { palette } = useTheme();
+  const styles = useUiStyles();
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
@@ -189,6 +202,7 @@ export function Avatar({
   name?: string | null;
   size?: number;
 }) {
+  const styles = useUiStyles();
   const initials = (name ?? "Student")
     .trim()
     .split(/\s+/)
@@ -230,117 +244,131 @@ export function Avatar({
   );
 }
 
-export const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.bg },
-  content: { padding: 20, gap: 16 },
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    padding: 24,
-  },
-  muted: {
-    color: palette.muted,
-    fontSize: type.body.fontSize,
-    lineHeight: type.body.lineHeight,
-    textAlign: "center",
-  },
-  error: {
-    color: palette.danger,
-    fontSize: type.body.fontSize,
-    lineHeight: type.body.lineHeight,
-    textAlign: "center",
-  },
-  empty: { alignItems: "center", gap: 10, paddingVertical: 44 },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: palette.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  emptyTitle: {
-    color: palette.ink,
-    fontSize: type.h2.fontSize,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  emptyAction: { marginTop: 8 },
-  card: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.xl,
-    padding: 18,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: palette.line,
-    ...shadow.card,
-  },
-  avatar: {
-    overflow: "hidden",
-    backgroundColor: palette.primarySoft,
-    borderWidth: 1,
-    borderColor: palette.line,
-  },
-  avatarImage: { overflow: "hidden" },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarText: { color: palette.primaryDeep, fontWeight: "800" },
-  button: {
-    minHeight: 52,
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 18,
-    backgroundColor: palette.primary,
-    ...shadow.raised,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  secondaryButton: {
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    boxShadow: "none",
-  },
-  dangerButton: {
-    backgroundColor: palette.dangerSoft,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    boxShadow: "none",
-  },
-  primaryPressed: {
-    backgroundColor: palette.primaryDeep,
-    transform: [{ scale: 0.97 }],
-  },
-  ghostPressed: { backgroundColor: palette.bg, transform: [{ scale: 0.98 }] },
-  disabled: { opacity: 0.5 },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  secondaryText: { color: palette.ink },
-  dangerText: { color: palette.danger },
-  field: { gap: 6 },
-  label: { color: palette.body, fontSize: 13, fontWeight: "700" },
-  input: {
-    borderWidth: 1.5,
-    borderColor: palette.line,
-    borderRadius: radius.md,
-    minHeight: 52,
-    paddingHorizontal: 14,
-    color: palette.ink,
-    fontSize: 16,
-    backgroundColor: "#FAFBFE",
-  },
-  inputFocused: { borderColor: palette.primary, backgroundColor: "#FFFFFF" },
-  fieldError: { minHeight: 18, color: palette.danger, fontSize: 12 },
-});
+/**
+ * Theme-aware shared styles. Colors resolve from the Zustand theme store, so
+ * every consumer re-renders with the active palette (light/dark) without
+ * prop drilling. Shape/type tokens stay static in `@/theme`.
+ */
+export function useUiStyles() {
+  const { palette } = useTheme();
+  return useMemo(() => createUiStyles(palette), [palette]);
+}
+
+const createUiStyles = (palette: Palette) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: palette.bg },
+    content: { padding: 20, gap: 16 },
+    center: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      padding: 24,
+    },
+    muted: {
+      color: palette.muted,
+      fontSize: type.body.fontSize,
+      lineHeight: type.body.lineHeight,
+      textAlign: "center",
+    },
+    error: {
+      color: palette.danger,
+      fontSize: type.body.fontSize,
+      lineHeight: type.body.lineHeight,
+      textAlign: "center",
+    },
+    empty: { alignItems: "center", gap: 10, paddingVertical: 44 },
+    emptyIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: palette.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 6,
+    },
+    emptyTitle: {
+      color: palette.ink,
+      fontSize: type.h2.fontSize,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    emptyAction: { marginTop: 8 },
+    card: {
+      backgroundColor: palette.surface,
+      borderRadius: radius.xl,
+      padding: 18,
+      gap: 10,
+      borderWidth: 1,
+      borderColor: palette.line,
+      ...shadow.card,
+    },
+    avatar: {
+      overflow: "hidden",
+      backgroundColor: palette.primarySoft,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    avatarImage: { overflow: "hidden" },
+    avatarFallback: { alignItems: "center", justifyContent: "center" },
+    avatarText: { color: palette.primaryDeep, fontWeight: "800" },
+    button: {
+      minHeight: 52,
+      borderRadius: radius.lg,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 18,
+      backgroundColor: palette.primary,
+      ...shadow.raised,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    secondaryButton: {
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      boxShadow: "none",
+    },
+    dangerButton: {
+      backgroundColor: palette.dangerSoft,
+      borderWidth: 1,
+      borderColor: palette.dangerBorder,
+      boxShadow: "none",
+    },
+    primaryPressed: {
+      backgroundColor: palette.primaryDeep,
+      transform: [{ scale: 0.97 }],
+    },
+    ghostPressed: { backgroundColor: palette.bg, transform: [{ scale: 0.98 }] },
+    disabled: { opacity: 0.5 },
+    buttonText: {
+      color: palette.onPrimary,
+      fontSize: 16,
+      fontWeight: "700",
+      letterSpacing: -0.2,
+      textAlign: "center",
+      flexShrink: 1,
+    },
+    secondaryText: { color: palette.ink },
+    dangerText: { color: palette.danger },
+    field: { gap: 6 },
+    label: { color: palette.body, fontSize: 13, fontWeight: "700" },
+    input: {
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: radius.md,
+      minHeight: 52,
+      paddingHorizontal: 14,
+      color: palette.ink,
+      fontSize: 16,
+      backgroundColor: palette.inputBg,
+    },
+    inputFocused: {
+      borderColor: palette.primary,
+      backgroundColor: palette.surface,
+    },
+    fieldError: { minHeight: 18, color: palette.danger, fontSize: 12 },
+  });

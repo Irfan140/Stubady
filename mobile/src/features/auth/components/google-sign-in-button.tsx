@@ -1,7 +1,7 @@
 import { useSignInWithGoogle } from "@clerk/expo/google";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +13,9 @@ import {
 } from "react-native";
 
 import { hapticError, hapticLight, hapticSuccess } from "@/lib/haptics";
-import { palette, radius, shadow } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow } from "@/theme";
+import type { Palette } from "@/theme";
 
 export function GoogleSignInButton({
   showDivider = true,
@@ -21,6 +23,8 @@ export function GoogleSignInButton({
   showDivider?: boolean;
 }) {
   const { startGoogleAuthenticationFlow } = useSignInWithGoogle();
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -94,49 +98,50 @@ export function GoogleSignInButton({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: 18 },
-  button: {
-    minHeight: 54,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: palette.line,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.surface,
-    ...shadow.card,
-  },
-  pressed: { transform: [{ scale: 0.98 }], borderColor: palette.primary },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingHorizontal: 16,
-  },
-  logo: { width: 20, height: 20 },
-  text: {
-    flexShrink: 1,
-    color: palette.ink,
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  disabled: { opacity: 0.6 },
-  divider: { flexDirection: "row", alignItems: "center", gap: 12 },
-  line: { height: 1, backgroundColor: palette.line, flex: 1 },
-  or: {
-    color: palette.faint,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.2,
-  },
-  transition: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: "rgba(244, 246, 251, 0.96)",
-  },
-  transitionTitle: { color: palette.ink, fontSize: 17, fontWeight: "800" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    wrap: { gap: 18 },
+    button: {
+      minHeight: 54,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: palette.line,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surface,
+      ...shadow.card,
+    },
+    pressed: { transform: [{ scale: 0.98 }], borderColor: palette.primary },
+    buttonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      paddingHorizontal: 16,
+    },
+    logo: { width: 20, height: 20 },
+    text: {
+      flexShrink: 1,
+      color: palette.ink,
+      fontSize: 16,
+      fontWeight: "700",
+      letterSpacing: -0.2,
+    },
+    disabled: { opacity: 0.6 },
+    divider: { flexDirection: "row", alignItems: "center", gap: 12 },
+    line: { height: 1, backgroundColor: palette.line, flex: 1 },
+    or: {
+      color: palette.faint,
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.2,
+    },
+    transition: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      backgroundColor: `${palette.bg}F5`,
+    },
+    transitionTitle: { color: palette.ink, fontSize: 17, fontWeight: "800" },
+  });

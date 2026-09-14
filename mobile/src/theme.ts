@@ -1,4 +1,4 @@
-export const palette = {
+const lightPalette = {
   bg: "#F4F6FB",
   surface: "#FFFFFF",
   ink: "#0B1220",
@@ -16,7 +16,40 @@ export const palette = {
   warningSoft: "#FDF3E3",
   danger: "#DC2626",
   dangerSoft: "#FEF2F2",
+  dangerBorder: "#FECACA",
+  inputBg: "#FAFBFE",
+  onPrimary: "#FFFFFF",
 } as const;
+
+export const darkPalette = {
+  bg: "#0A0F1E",
+  surface: "#141C33",
+  ink: "#EDF1F7",
+  body: "#C3CAD9",
+  muted: "#8E97AC",
+  faint: "#5D6578",
+  line: "#263049",
+  primary: "#818CF8",
+  primaryDeep: "#6366F1",
+  primarySoft: "#1D2547",
+  accent: "#A78BFA",
+  success: "#34D399",
+  successSoft: "#0F2E25",
+  warning: "#FBBF24",
+  warningSoft: "#33270E",
+  danger: "#F87171",
+  dangerSoft: "#3A1B20",
+  dangerBorder: "#5B2626",
+  inputBg: "#1C2542",
+  onPrimary: "#FFFFFF",
+} as const;
+
+export type Palette = { [K in keyof typeof lightPalette]: string };
+
+export type ColorSchemeName = "light" | "dark";
+
+export const getPalette = (scheme: ColorSchemeName): Palette =>
+  scheme === "dark" ? darkPalette : lightPalette;
 
 export const radius = {
   sm: 10,

@@ -4,9 +4,11 @@ import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { hapticSelection } from "@/lib/haptics";
-import { palette, radius, shadow } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow } from "@/theme";
 
 export default function TabsLayout() {
+  const { palette } = useTheme();
   const insets = useSafeAreaInsets();
   // Floating rounded bar — bottom margin respects the system gesture area
   // so content and OS buttons are never covered. Pure JS style, OTA-safe.
@@ -62,20 +64,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{ android: "settings", ios: "gearshape" }}
-              tintColor={color}
-              size={size}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="premium"
-        options={{
-          title: "Premium",
-          tabBarLabel: "Premium",
-          tabBarIcon: ({ color, size }) => (
-            <SymbolView
-              name={{ android: "workspace_premium", ios: "star.circle" }}
               tintColor={color}
               size={size}
             />

@@ -1,6 +1,6 @@
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { uploadFileToPresignedUrl } from "@/lib/storage/upload";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 import { useCompletePdfUpload, useCreatePdfUpload } from "../api";
 
 const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
@@ -39,6 +41,8 @@ export function PdfSourceForm({
 }) {
   const createUpload = useCreatePdfUpload();
   const completeUpload = useCompletePdfUpload(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
   const started = useRef(false);
   const [status, setStatus] = useState<UploadStatus | null>(null);
@@ -124,7 +128,7 @@ export function PdfSourceForm({
           </>
         ) : (
           <>
-            <ActivityIndicator color="#FFFFFF" size="small" />
+            <ActivityIndicator color={palette.primary} size="small" />
             <Text style={styles.statusText}>{STATUS_LABEL[status]}</Text>
           </>
         )}
@@ -133,33 +137,39 @@ export function PdfSourceForm({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { position: "absolute", left: 16, right: 16, alignItems: "center" },
-  card: {
-    width: "100%",
-    maxWidth: 480,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#0F172A",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.35)",
-  },
-  cardError: { backgroundColor: "#7F1D1D" },
-  statusText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-    flexShrink: 1,
-  },
-  errorText: { color: "#FECACA", fontSize: 13, lineHeight: 18, flex: 1 },
-  dismiss: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-  },
-  dismissText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    overlay: {
+      position: "absolute",
+      left: 16,
+      right: 16,
+      alignItems: "center",
+    },
+    card: {
+      width: "100%",
+      maxWidth: 480,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: palette.surface,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.35)",
+    },
+    cardError: { backgroundColor: "#7F1D1D" },
+    statusText: {
+      color: palette.ink,
+      fontSize: 14,
+      fontWeight: "600",
+      flexShrink: 1,
+    },
+    errorText: { color: "#FECACA", fontSize: 13, lineHeight: 18, flex: 1 },
+    dismiss: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: "rgba(255, 255, 255, 0.16)",
+    },
+    dismissText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  });
