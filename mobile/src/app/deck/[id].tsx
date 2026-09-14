@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -10,15 +10,15 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import {
-  Button,
-  ErrorState,
-  LoadingState,
-  styles as ui,
-} from "@/components/ui";
+import { Button, ErrorState, LoadingState, useUiStyles } from "@/components/ui";
 import { useDeck } from "@/features/study/api";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 export default function Deck() {
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const { id, studySetId } = useLocalSearchParams<{
     id: string;
     studySetId: string;
@@ -142,34 +142,39 @@ export default function Deck() {
   );
 }
 
-const styles = StyleSheet.create({
-  progress: { color: "#4F46E5", fontWeight: "800", textAlign: "center" },
-  cardContainer: { minHeight: 260, position: "relative" },
-  cardFace: {
-    position: "absolute",
-    inset: 0,
-    borderRadius: 18,
-    padding: 18,
-    gap: 14,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backfaceVisibility: "hidden",
-    justifyContent: "center",
-  },
-  backFace: { backgroundColor: "#EFF6FF" },
-  label: {
-    color: "#4F46E5",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-  },
-  cardText: {
-    color: "#0F172A",
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
-    minHeight: 120,
-  },
-  actions: { flexDirection: "row", gap: 10 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    progress: {
+      color: palette.primary,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    cardContainer: { minHeight: 260, position: "relative" },
+    cardFace: {
+      position: "absolute",
+      inset: 0,
+      borderRadius: 18,
+      padding: 18,
+      gap: 14,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      backfaceVisibility: "hidden",
+      justifyContent: "center",
+    },
+    backFace: { backgroundColor: palette.primarySoft },
+    label: {
+      color: palette.primary,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.5,
+    },
+    cardText: {
+      color: palette.ink,
+      fontSize: 24,
+      lineHeight: 32,
+      fontWeight: "700",
+      minHeight: 120,
+    },
+    actions: { flexDirection: "row", gap: 10 },
+  });

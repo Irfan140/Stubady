@@ -1,5 +1,6 @@
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import { useMemo } from "react";
 import {
   Alert,
   FlatList,
@@ -16,7 +17,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  styles as ui,
+  useUiStyles,
 } from "@/components/ui";
 import {
   useConversation,
@@ -24,12 +25,17 @@ import {
   useDeleteConversation,
 } from "@/features/study/api";
 import type { Conversation } from "@/features/study/types";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 export default function Conversations() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const query = useConversations(id);
   const create = useConversation(id);
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
@@ -89,7 +95,7 @@ export default function Conversations() {
               >
                 <SymbolView
                   name={{ ios: "chevron.left", android: "arrow_back" }}
-                  tintColor="#0F172A"
+                  tintColor={palette.ink}
                   size={22}
                 />
               </Pressable>
@@ -107,9 +113,7 @@ export default function Conversations() {
                   : "Study chats will appear here."}
               </Text>
               <Button
-                title={
-                  create.isPending ? "Opening…" : "+ New conversation"
-                }
+                title={create.isPending ? "Opening…" : "+ New conversation"}
                 onPress={() => {
                   void start();
                 }}
@@ -133,11 +137,7 @@ export default function Conversations() {
           />
         }
         renderItem={({ item, index }) => (
-          <ConversationRow
-            item={item}
-            index={index}
-            studySetId={id}
-          />
+          <ConversationRow item={item} index={index} studySetId={id} />
         )}
       />
     </>
@@ -154,6 +154,8 @@ function ConversationRow({
   studySetId: string;
 }) {
   const remove = useDeleteConversation(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const confirmDelete = () =>
     Alert.alert(
       "Delete conversation?",
@@ -166,10 +168,7 @@ function ConversationRow({
           onPress: () =>
             remove.mutate(item.id, {
               onError: (error) =>
-                Alert.alert(
-                  "Unable to delete conversation",
-                  error.message,
-                ),
+                Alert.alert("Unable to delete conversation", error.message),
             }),
         },
       ],
@@ -195,7 +194,7 @@ function ConversationRow({
                   ios: "bubble.left.and.bubble.right",
                   android: "chat_bubble",
                 }}
-                tintColor="#4F46E5"
+                tintColor={palette.primary}
                 size={22}
               />
             </View>
@@ -220,7 +219,7 @@ function ConversationRow({
                 >
                   <SymbolView
                     name={{ ios: "trash", android: "delete" }}
-                    tintColor="#DC2626"
+                    tintColor={palette.danger}
                     size={18}
                   />
                 </Pressable>
@@ -230,7 +229,7 @@ function ConversationRow({
             </View>
             <SymbolView
               name={{ ios: "chevron.right", android: "chevron_right" }}
-              tintColor="#94A3B8"
+              tintColor={palette.faint}
               size={20}
             />
           </View>
@@ -240,50 +239,56 @@ function ConversationRow({
   );
 }
 
-const styles = StyleSheet.create({
-  header: { gap: 12, marginBottom: 4 },
-  navBar: { flexDirection: "row", alignItems: "center", gap: 8 },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E6EAF2",
-  },
-  navTitle: { flex: 1, color: "#0F172A", fontSize: 17, fontWeight: "700" },
-  navSpacer: { width: 40 },
-  hero: { gap: 6 },
-  eyebrow: { color: "#4F46E5", fontSize: 11, fontWeight: "800", letterSpacing: 1.3 },
-  heroTitle: { color: "#0F172A", fontSize: 24, fontWeight: "800" },
-  heroSubtitle: { color: "#64748B", fontSize: 14, lineHeight: 20 },
-  item: { padding: 16 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#EEF0FE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  copy: { flex: 1, gap: 4 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  date: { flex: 1, color: "#4F46E5", fontSize: 12, fontWeight: "800" },
-  title: { color: "#0F172A", fontSize: 17, fontWeight: "800" },
-  link: { color: "#4F46E5", fontWeight: "700" },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  deleteDisabled: { opacity: 0.5 },
-  pressed: { opacity: 0.85 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    header: { gap: 12, marginBottom: 4 },
+    navBar: { flexDirection: "row", alignItems: "center", gap: 8 },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    navTitle: { flex: 1, color: palette.ink, fontSize: 17, fontWeight: "700" },
+    navSpacer: { width: 40 },
+    hero: { gap: 6 },
+    eyebrow: {
+      color: palette.primary,
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1.3,
+    },
+    heroTitle: { color: palette.ink, fontSize: 24, fontWeight: "800" },
+    heroSubtitle: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    item: { padding: 16 },
+    row: { flexDirection: "row", alignItems: "center", gap: 12 },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: palette.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    copy: { flex: 1, gap: 4 },
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    date: { flex: 1, color: palette.primary, fontSize: 12, fontWeight: "800" },
+    title: { color: palette.ink, fontSize: 17, fontWeight: "800" },
+    link: { color: palette.primary, fontWeight: "700" },
+    deleteButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FEF2F2",
+      borderWidth: 1,
+      borderColor: palette.dangerBorder,
+    },
+    deleteDisabled: { opacity: 0.5 },
+    pressed: { opacity: 0.85 },
+  });

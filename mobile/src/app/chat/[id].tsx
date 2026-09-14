@@ -20,11 +20,12 @@ import {
 } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { ErrorState, LoadingState, styles as ui } from "@/components/ui";
+import { ErrorState, LoadingState, useUiStyles } from "@/components/ui";
 import { useMessages, useSendMessage } from "@/features/study/api";
 import type { Message } from "@/features/study/types";
 import { hapticLight } from "@/lib/haptics";
-import { palette, radius, shadow } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow, type Palette } from "@/theme";
 
 const schema = z.object({
   message: z.string().trim().min(1, "Ask a question"),
@@ -48,6 +49,8 @@ const ChatBubble = memo(function ChatBubble({
   item: Message;
   streaming?: boolean;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const isUser = item.role === "user";
   return (
     <View style={[styles.messageRow, isUser && styles.userRow]}>
@@ -92,6 +95,8 @@ const Composer = memo(function Composer({
   bottomInset: number;
   onSend: () => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   // Watched here (not in Chat) so the input stays steady while the AI
   // streams above it.
   const draft = useWatch({ control, name: "message" });
@@ -135,11 +140,11 @@ const Composer = memo(function Composer({
                 ]}
               >
                 {isPending ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={palette.onPrimary} />
                 ) : (
                   <SymbolView
                     name={{ android: "arrow_upward", ios: "arrow.up" }}
-                    tintColor="#FFFFFF"
+                    tintColor={palette.onPrimary}
                     size={20}
                   />
                 )}
@@ -156,6 +161,9 @@ const Composer = memo(function Composer({
 });
 
 export default function Chat() {
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const messages = useMessages(id);
@@ -334,136 +342,142 @@ export default function Chat() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12, flexGrow: 1 },
-  messageRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    paddingRight: 44,
-  },
-  userRow: { justifyContent: "flex-end", paddingRight: 0, paddingLeft: 44 },
-  assistantAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.primarySoft,
-    borderWidth: 1,
-    borderColor: palette.line,
-    marginBottom: 2,
-  },
-  bubble: {
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    gap: 4,
-    maxWidth: "100%",
-  },
-  userBubble: {
-    backgroundColor: palette.primary,
-    borderBottomRightRadius: 8,
-    ...shadow.raised,
-  },
-  assistantBubble: {
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderBottomLeftRadius: 8,
-    ...shadow.card,
-  },
-  role: {
-    color: palette.faint,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.4,
-  },
-  userRole: { color: "rgba(255,255,255,0.75)" },
-  message: { color: palette.ink, fontSize: 16, lineHeight: 23 },
-  userMessage: { color: "#FFFFFF" },
-  cursor: { color: palette.primary, fontWeight: "800" },
-  typingRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
-  typingText: { color: palette.muted, fontSize: 14, fontStyle: "italic" },
-  emptyWrap: {
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 56,
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: palette.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  emptyTitle: {
-    color: palette.ink,
-    fontSize: 20,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  emptyText: {
-    color: palette.muted,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: "center",
-  },
-  composer: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderColor: palette.line,
-    backgroundColor: palette.surface,
-  },
-  inputWrap: { gap: 4 },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    backgroundColor: palette.bg,
-    borderWidth: 1.5,
-    borderColor: palette.line,
-    borderRadius: radius.xl,
-    paddingLeft: 16,
-    paddingRight: 8,
-    paddingVertical: 8,
-  },
-  inputBoxError: { borderColor: palette.danger },
-  input: {
-    flex: 1,
-    maxHeight: 120,
-    minHeight: 36,
-    paddingVertical: 6,
-    color: palette.ink,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.primary,
-    ...shadow.raised,
-  },
-  sendButtonDisabled: { opacity: 0.4, boxShadow: "none" },
-  sendButtonPressed: {
-    backgroundColor: palette.primaryDeep,
-    transform: [{ scale: 0.93 }],
-  },
-  error: { color: palette.danger, fontSize: 12, paddingLeft: 16 },
-  sendError: {
-    color: palette.danger,
-    fontSize: 12,
-    textAlign: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: palette.surface,
-  },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      gap: 12,
+      flexGrow: 1,
+    },
+    messageRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      paddingRight: 44,
+    },
+    userRow: { justifyContent: "flex-end", paddingRight: 0, paddingLeft: 44 },
+    assistantAvatar: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.primarySoft,
+      borderWidth: 1,
+      borderColor: palette.line,
+      marginBottom: 2,
+    },
+    bubble: {
+      borderRadius: 20,
+      paddingHorizontal: 15,
+      paddingVertical: 12,
+      gap: 4,
+      maxWidth: "100%",
+    },
+    userBubble: {
+      backgroundColor: palette.primary,
+      borderBottomRightRadius: 8,
+      ...shadow.raised,
+    },
+    assistantBubble: {
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderBottomLeftRadius: 8,
+      ...shadow.card,
+    },
+    role: {
+      color: palette.faint,
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+    },
+    userRole: { color: "rgba(255,255,255,0.75)" },
+    message: { color: palette.ink, fontSize: 16, lineHeight: 23 },
+    userMessage: { color: palette.onPrimary },
+    cursor: { color: palette.primary, fontWeight: "800" },
+    typingRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+    typingText: { color: palette.muted, fontSize: 14, fontStyle: "italic" },
+    emptyWrap: {
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 56,
+      paddingHorizontal: 32,
+    },
+    emptyIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: palette.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    emptyTitle: {
+      color: palette.ink,
+      fontSize: 20,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    emptyText: {
+      color: palette.muted,
+      fontSize: 14,
+      lineHeight: 21,
+      textAlign: "center",
+    },
+    composer: {
+      paddingHorizontal: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderColor: palette.line,
+      backgroundColor: palette.surface,
+    },
+    inputWrap: { gap: 4 },
+    inputBox: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      backgroundColor: palette.bg,
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: radius.xl,
+      paddingLeft: 16,
+      paddingRight: 8,
+      paddingVertical: 8,
+    },
+    inputBoxError: { borderColor: palette.danger },
+    input: {
+      flex: 1,
+      maxHeight: 120,
+      minHeight: 36,
+      paddingVertical: 6,
+      color: palette.ink,
+      fontSize: 16,
+      lineHeight: 22,
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.primary,
+      ...shadow.raised,
+    },
+    sendButtonDisabled: { opacity: 0.4, boxShadow: "none" },
+    sendButtonPressed: {
+      backgroundColor: palette.primaryDeep,
+      transform: [{ scale: 0.93 }],
+    },
+    error: { color: palette.danger, fontSize: 12, paddingLeft: 16 },
+    sendError: {
+      color: palette.danger,
+      fontSize: 12,
+      textAlign: "center",
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      backgroundColor: palette.surface,
+    },
+  });

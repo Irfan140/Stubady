@@ -8,7 +8,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Stack, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -28,7 +28,8 @@ import * as Updates from "expo-updates";
 
 import { env } from "@/config/env";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
-import { palette, radius, type } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, type, type Palette } from "@/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ onlineManager.setEventListener((setOnline) =>
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const { isDark } = useTheme();
   return (
     <ClerkProvider
       publishableKey={env.clerkPublishableKey}
@@ -53,7 +55,7 @@ export default function RootLayout() {
     >
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={isDark ? "light" : "dark"} />
           <RootNavigator />
           <UpdateBanner />
         </SafeAreaProvider>
@@ -63,6 +65,8 @@ export default function RootLayout() {
 }
 
 function UpdateBanner() {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const { isUpdateAvailable, isUpdatePending, isDownloading, isChecking } =
     Updates.useUpdates();
   const insets = useSafeAreaInsets();
@@ -146,7 +150,7 @@ function UpdateBanner() {
             style={[styles.updateButton, busy && styles.updateButtonDisabled]}
           >
             {busy ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={palette.onPrimary} size="small" />
             ) : (
               <Text style={styles.updateButtonText}>{buttonLabel}</Text>
             )}
@@ -159,6 +163,7 @@ function UpdateBanner() {
 
 function RootNavigator() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { palette } = useTheme();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
@@ -202,48 +207,55 @@ function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  updateOverlay: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    alignItems: "center",
-  },
-  updateCard: {
-    width: "100%",
-    maxWidth: 480,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: palette.ink,
-    borderRadius: radius.lg,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    boxShadow: "0 8px 24px rgba(11, 18, 32, 0.35)",
-  },
-  updateTextWrap: { flex: 1, gap: 2 },
-  updateTitle: {
-    color: "#FFFFFF",
-    fontSize: type.h3.fontSize,
-    fontWeight: "800",
-  },
-  updateMessage: { color: "#CBD5E1", fontSize: 12, lineHeight: 16 },
-  updateActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dismissButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-  },
-  dismissText: { color: palette.faint, fontSize: 13, fontWeight: "600" },
-  updateButton: {
-    minWidth: 92,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.pill,
-    backgroundColor: palette.primary,
-  },
-  updateButtonDisabled: { opacity: 0.6 },
-  updateButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    updateOverlay: {
+      position: "absolute",
+      left: 16,
+      right: 16,
+      alignItems: "center",
+    },
+    updateCard: {
+      width: "100%",
+      maxWidth: 480,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: palette.surface,
+      borderRadius: radius.lg,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderWidth: 1,
+      borderColor: palette.line,
+      boxShadow: "0 8px 24px rgba(11, 18, 32, 0.35)",
+    },
+    updateTextWrap: { flex: 1, gap: 2 },
+    updateTitle: {
+      color: palette.ink,
+      fontSize: type.h3.fontSize,
+      fontWeight: "800",
+    },
+    updateMessage: { color: palette.muted, fontSize: 12, lineHeight: 16 },
+    updateActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+    dismissButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.pill,
+    },
+    dismissText: { color: palette.faint, fontSize: 13, fontWeight: "600" },
+    updateButton: {
+      minWidth: 92,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.pill,
+      backgroundColor: palette.primary,
+    },
+    updateButtonDisabled: { opacity: 0.6 },
+    updateButtonText: {
+      color: palette.onPrimary,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+  });

@@ -1,6 +1,6 @@
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -26,7 +26,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  styles as ui,
+  useUiStyles,
 } from "@/components/ui";
 import {
   useConversation,
@@ -45,6 +45,8 @@ import { FlashcardCountForm } from "@/features/study/components/flashcard-count-
 import { PdfSourceForm } from "@/features/study/components/pdf-source-form";
 import { SourceForm } from "@/features/study/components/source-form";
 import type { Source } from "@/features/study/types";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 export default function StudySetDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -69,11 +71,13 @@ export default function StudySetDetail() {
           pathname: "/chat/[id]",
           params: { id: conversation.id, studySetId: id },
         }),
-      onError: (error) =>
-        Alert.alert("Unable to start chat", error.message),
+      onError: (error) => Alert.alert("Unable to start chat", error.message),
     });
   };
   const insets = useSafeAreaInsets();
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
 
   if (set.isPending) return <LoadingState />;
   if (set.isError)
@@ -134,7 +138,7 @@ export default function StudySetDetail() {
               >
                 <SymbolView
                   name={{ ios: "chevron.left", android: "arrow_back" }}
-                  tintColor="#0F172A"
+                  tintColor={palette.ink}
                   size={22}
                 />
               </Pressable>
@@ -319,7 +323,7 @@ export default function StudySetDetail() {
                   />
                   {generateCards.isPending ? (
                     <View style={styles.processing}>
-                      <ActivityIndicator color="#4F46E5" />
+                      <ActivityIndicator color={palette.primary} />
                       <Text style={styles.processingTitle}>
                         Building your review deck...
                       </Text>
@@ -456,6 +460,8 @@ export default function StudySetDetail() {
 function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
   const retry = useRetrySource(studySetId);
   const remove = useDeleteSource(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const active = item.status === "pending" || item.status === "processing";
   return (
     <Card>
@@ -471,7 +477,9 @@ function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
                 : styles.processingPill,
           ]}
         >
-          {active ? <ActivityIndicator size="small" color="#4F46E5" /> : null}
+          {active ? (
+            <ActivityIndicator size="small" color={palette.primary} />
+          ) : null}
           <Text style={styles.statusText}>
             {active
               ? item.status === "pending"
@@ -544,6 +552,8 @@ function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
 }
 
 function SectionTitle({ title }: { title: string }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   return <Text style={styles.section}>{title}</Text>;
 }
 
@@ -556,6 +566,8 @@ function SourcePickerModal({
   onClose: () => void;
   onSelect: (mode: "note" | "web" | "pdf") => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   return (
     <Modal
       visible={visible}
@@ -600,6 +612,8 @@ function SourceEntryModal({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   return (
     <Modal
       visible={mode !== null}
@@ -655,113 +669,119 @@ function SourceEntryModal({
   );
 }
 
-const styles = StyleSheet.create({
-  header: { gap: 12 },
-  preview: { color: "#334155", fontSize: 15, lineHeight: 22 },
-  footer: { gap: 12, paddingTop: 8 },
-  title: { color: "#0F172A", fontSize: 30, fontWeight: "800" },
-  navBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E6EAF2",
-  },
-  backButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
-  navTitle: { flex: 1, color: "#0F172A", fontSize: 17, fontWeight: "700" },
-  navSpacer: { width: 40 },
-  hero: { gap: 10 },
-  heroTitle: { color: "#0F172A", fontSize: 24, fontWeight: "800" },
-  heroSubtitle: { color: "#64748B", fontSize: 14, lineHeight: 20 },
-  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  actionFlex: { flex: 1 },
-  manage: { gap: 10 },
-  sourceActions: { flexDirection: "column", gap: 8 },
-  section: { color: "#0F172A", fontSize: 21, fontWeight: "800", marginTop: 8 },
-  sourceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-  },
-  sourceType: {
-    color: "#4F46E5",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  processingPill: { backgroundColor: "#DBEAFE" },
-  readyPill: { backgroundColor: "#DCFCE7" },
-  failedPill: { backgroundColor: "#FEE2E2" },
-  statusText: { color: "#334155", fontSize: 12, fontWeight: "700" },
-  processingText: { color: "#64748B", fontSize: 13 },
-  sourceText: { color: "#0F172A", fontSize: 16, fontWeight: "600" },
-  processing: {
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: "#EFF6FF",
-  },
-  processingTitle: { color: "#4338CA", fontWeight: "700" },
-  cardTitle: { color: "#0F172A", fontSize: 18, fontWeight: "700" },
-  link: { color: "#4F46E5", fontWeight: "700" },
-  error: { color: "#B91C1C", textAlign: "center" },
-  pickerBackdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.42)",
-  },
-  picker: {
-    gap: 10,
-    padding: 20,
-    paddingBottom: 30,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    backgroundColor: "#FFFFFF",
-  },
-  modalKeyboard: { flex: 1 },
-  entrySheet: {
-    maxHeight: "90%",
-    paddingTop: 6,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    backgroundColor: "#FFFFFF",
-  },
-  entryScroll: { paddingTop: 6 },
-  entryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 4,
-  },
-  close: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-  },
-  closeText: { color: "#334155", fontSize: 25, lineHeight: 28 },
-  pickerTitle: { color: "#0F172A", fontSize: 22, fontWeight: "800" },
-  pickerSubtitle: { color: "#64748B", fontSize: 14, marginBottom: 4 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    header: { gap: 12 },
+    preview: { color: palette.body, fontSize: 15, lineHeight: 22 },
+    footer: { gap: 12, paddingTop: 8 },
+    title: { color: palette.ink, fontSize: 30, fontWeight: "800" },
+    navBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 2,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    backButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+    navTitle: { flex: 1, color: palette.ink, fontSize: 17, fontWeight: "700" },
+    navSpacer: { width: 40 },
+    hero: { gap: 10 },
+    heroTitle: { color: palette.ink, fontSize: 24, fontWeight: "800" },
+    heroSubtitle: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+    actionFlex: { flex: 1 },
+    manage: { gap: 10 },
+    sourceActions: { flexDirection: "column", gap: 8 },
+    section: {
+      color: palette.ink,
+      fontSize: 21,
+      fontWeight: "800",
+      marginTop: 8,
+    },
+    sourceHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+    },
+    sourceType: {
+      color: palette.primary,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1,
+    },
+    statusPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      borderRadius: 999,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+    },
+    processingPill: { backgroundColor: palette.primarySoft },
+    readyPill: { backgroundColor: palette.successSoft },
+    failedPill: { backgroundColor: palette.dangerSoft },
+    statusText: { color: palette.body, fontSize: 12, fontWeight: "700" },
+    processingText: { color: palette.muted, fontSize: 13 },
+    sourceText: { color: palette.ink, fontSize: 16, fontWeight: "600" },
+    processing: {
+      alignItems: "center",
+      gap: 6,
+      borderRadius: 14,
+      padding: 14,
+      backgroundColor: palette.primarySoft,
+    },
+    processingTitle: { color: palette.primaryDeep, fontWeight: "700" },
+    cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "700" },
+    link: { color: palette.primary, fontWeight: "700" },
+    error: { color: palette.danger, textAlign: "center" },
+    pickerBackdrop: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(15, 23, 42, 0.42)",
+    },
+    picker: {
+      gap: 10,
+      padding: 20,
+      paddingBottom: 30,
+      borderTopLeftRadius: 26,
+      borderTopRightRadius: 26,
+      backgroundColor: palette.surface,
+    },
+    modalKeyboard: { flex: 1 },
+    entrySheet: {
+      maxHeight: "90%",
+      paddingTop: 6,
+      borderTopLeftRadius: 26,
+      borderTopRightRadius: 26,
+      backgroundColor: palette.surface,
+    },
+    entryScroll: { paddingTop: 6 },
+    entryHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingBottom: 4,
+    },
+    close: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.bg,
+    },
+    closeText: { color: palette.body, fontSize: 25, lineHeight: 28 },
+    pickerTitle: { color: palette.ink, fontSize: 22, fontWeight: "800" },
+    pickerSubtitle: { color: palette.muted, fontSize: 14, marginBottom: 4 },
+  });

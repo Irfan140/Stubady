@@ -1,15 +1,19 @@
 import { Link } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import { useMemo } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Card } from "@/components/ui";
 import { hapticSelection } from "@/lib/haptics";
-import { palette, radius } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, type Palette } from "@/theme";
 import { useDeleteStudySet } from "../api";
 import type { StudySet } from "../types";
 
 export function StudySetCard({ item }: { item: StudySet }) {
   const remove = useDeleteStudySet();
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const confirmDelete = () =>
     Alert.alert(
       "Delete study set?",
@@ -97,42 +101,43 @@ export function StudySetCard({ item }: { item: StudySet }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { padding: 16 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: palette.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  copy: { flex: 1, gap: 3, paddingRight: 36 },
-  title: {
-    color: palette.ink,
-    fontSize: 17,
-    lineHeight: 23,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  subtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
-  meta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
-  date: { color: palette.faint, fontSize: 12, fontWeight: "600" },
-  deleteButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.dangerSoft,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  deleteDisabled: { opacity: 0.5 },
-  deletePressed: { opacity: 0.7 },
-  pressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    card: { padding: 16 },
+    row: { flexDirection: "row", alignItems: "center", gap: 12 },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.lg,
+      backgroundColor: palette.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    copy: { flex: 1, gap: 3, paddingRight: 36 },
+    title: {
+      color: palette.ink,
+      fontSize: 17,
+      lineHeight: 23,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+    },
+    subtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
+    meta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
+    date: { color: palette.faint, fontSize: 12, fontWeight: "600" },
+    deleteButton: {
+      position: "absolute",
+      top: 12,
+      right: 12,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.dangerSoft,
+      borderWidth: 1,
+      borderColor: palette.dangerBorder,
+    },
+    deleteDisabled: { opacity: 0.5 },
+    deletePressed: { opacity: 0.7 },
+    pressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  });

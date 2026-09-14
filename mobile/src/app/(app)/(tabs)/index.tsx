@@ -2,7 +2,7 @@ import { useUser } from "@clerk/expo";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -18,14 +18,18 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  styles as ui,
+  useUiStyles,
 } from "@/components/ui";
 import { useStudySets } from "@/features/study/api";
 import { StudySetCard } from "@/features/study/components/study-set-card";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
-import { palette, radius, shadow, type } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow, type, type Palette } from "@/theme";
 
 export default function StudySetsScreen() {
+  const { isDark, palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const query = useStudySets();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
@@ -51,7 +55,7 @@ export default function StudySetsScreen() {
   };
   return (
     <View style={ui.screen}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <FlatList
         contentInsetAdjustmentBehavior="automatic"
         style={ui.screen}
@@ -156,7 +160,7 @@ export default function StudySetsScreen() {
       >
         <SymbolView
           name={{ ios: "plus", android: "add" }}
-          tintColor="#FFFFFF"
+          tintColor={palette.onPrimary}
           size={26}
         />
       </Pressable>
@@ -164,43 +168,44 @@ export default function StudySetsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { marginBottom: 4 },
-  greetingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  greetingCopy: { flex: 1, justifyContent: "center" },
-  avatarButton: { borderRadius: 24 },
-  avatarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
-  title: {
-    color: palette.ink,
-    fontSize: type.title.fontSize,
-    fontWeight: "800",
-    letterSpacing: type.title.letterSpacing,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.primary,
-    ...shadow.raised,
-  },
-  fabPressed: {
-    backgroundColor: palette.primaryDeep,
-    transform: [{ scale: 0.96 }],
-  },
-  emptyCta: {
-    backgroundColor: palette.primary,
-    borderRadius: radius.pill,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  emptyCtaPressed: { backgroundColor: palette.primaryDeep },
-  emptyCtaText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    header: { marginBottom: 4 },
+    greetingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    greetingCopy: { flex: 1, justifyContent: "center" },
+    avatarButton: { borderRadius: 24 },
+    avatarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+    title: {
+      color: palette.ink,
+      fontSize: type.title.fontSize,
+      fontWeight: "800",
+      letterSpacing: type.title.letterSpacing,
+    },
+    fab: {
+      position: "absolute",
+      right: 20,
+      width: 56,
+      height: 56,
+      borderRadius: radius.pill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.primary,
+      ...shadow.raised,
+    },
+    fabPressed: {
+      backgroundColor: palette.primaryDeep,
+      transform: [{ scale: 0.96 }],
+    },
+    emptyCta: {
+      backgroundColor: palette.primary,
+      borderRadius: radius.pill,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    emptyCtaPressed: { backgroundColor: palette.primaryDeep },
+    emptyCtaText: { color: palette.onPrimary, fontSize: 14, fontWeight: "800" },
+  });

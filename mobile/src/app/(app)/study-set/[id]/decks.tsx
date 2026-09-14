@@ -1,5 +1,6 @@
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import { useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,14 +9,19 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  styles as ui,
+  useUiStyles,
 } from "@/components/ui";
 import { useDecks } from "@/features/study/api";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 export default function Decks() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const query = useDecks(id);
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
@@ -61,7 +67,7 @@ export default function Decks() {
               >
                 <SymbolView
                   name={{ ios: "chevron.left", android: "arrow_back" }}
-                  tintColor="#0F172A"
+                  tintColor={palette.ink}
                   size={22}
                 />
               </Pressable>
@@ -105,7 +111,7 @@ export default function Decks() {
                   <View style={styles.iconWrap}>
                     <SymbolView
                       name={{ ios: "square.stack.3d.up", android: "style" }}
-                      tintColor="#4F46E5"
+                      tintColor={palette.primary}
                       size={22}
                     />
                   </View>
@@ -117,13 +123,13 @@ export default function Decks() {
                       {item.title}
                     </Text>
                     <Text style={styles.link}>
-                      {item.cardCount}{" "}
-                      {item.cardCount === 1 ? "card" : "cards"} · Review deck ›
+                      {item.cardCount} {item.cardCount === 1 ? "card" : "cards"}{" "}
+                      · Review deck ›
                     </Text>
                   </View>
                   <SymbolView
                     name={{ ios: "chevron.right", android: "chevron_right" }}
-                    tintColor="#94A3B8"
+                    tintColor={palette.faint}
                     size={20}
                   />
                 </View>
@@ -136,38 +142,44 @@ export default function Decks() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { gap: 12, marginBottom: 4 },
-  navBar: { flexDirection: "row", alignItems: "center", gap: 8 },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E6EAF2",
-  },
-  navTitle: { flex: 1, color: "#0F172A", fontSize: 17, fontWeight: "700" },
-  navSpacer: { width: 40 },
-  hero: { gap: 6 },
-  eyebrow: { color: "#4F46E5", fontSize: 11, fontWeight: "800", letterSpacing: 1.3 },
-  heroTitle: { color: "#0F172A", fontSize: 24, fontWeight: "800" },
-  heroSubtitle: { color: "#64748B", fontSize: 14, lineHeight: 20 },
-  item: { padding: 16 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#EEF0FE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  copy: { flex: 1, gap: 4 },
-  date: { color: "#4F46E5", fontSize: 12, fontWeight: "800" },
-  title: { color: "#0F172A", fontSize: 17, fontWeight: "800" },
-  link: { color: "#4F46E5", fontWeight: "700" },
-  pressed: { opacity: 0.85 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    header: { gap: 12, marginBottom: 4 },
+    navBar: { flexDirection: "row", alignItems: "center", gap: 8 },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    navTitle: { flex: 1, color: palette.ink, fontSize: 17, fontWeight: "700" },
+    navSpacer: { width: 40 },
+    hero: { gap: 6 },
+    eyebrow: {
+      color: palette.primary,
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1.3,
+    },
+    heroTitle: { color: palette.ink, fontSize: 24, fontWeight: "800" },
+    heroSubtitle: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    item: { padding: 16 },
+    row: { flexDirection: "row", alignItems: "center", gap: 12 },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: palette.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    copy: { flex: 1, gap: 4 },
+    date: { color: palette.primary, fontSize: 12, fontWeight: "800" },
+    title: { color: palette.ink, fontSize: 17, fontWeight: "800" },
+    link: { color: palette.primary, fontWeight: "700" },
+    pressed: { opacity: 0.85 },
+  });

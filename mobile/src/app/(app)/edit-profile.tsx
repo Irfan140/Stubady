@@ -1,9 +1,9 @@
 import { useUser } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Stack, router } from "expo-router";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,7 +14,9 @@ import {
 } from "react-native";
 import { z } from "zod";
 
-import { Button, Card, styles as ui } from "@/components/ui";
+import { Button, Card, useUiStyles } from "@/components/ui";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 const profileSchema = z.object({
   firstName: z.string().trim().max(50, "Use 50 characters or fewer"),
@@ -24,6 +26,10 @@ type ProfileValues = z.infer<typeof profileSchema>;
 
 export default function EditProfile() {
   const { user } = useUser();
+  const { palette } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     values: {
@@ -33,17 +39,15 @@ export default function EditProfile() {
   });
   const save = async (values: ProfileValues) => {
     if (!user) return;
+    setSaveError(null);
     try {
       await user.update({
         firstName: values.firstName || null,
         lastName: values.lastName || null,
       });
-      Alert.alert("Profile updated", "Your name has been saved.", [
-        { text: "Done", onPress: () => router.back() },
-      ]);
+      router.back();
     } catch (error) {
-      Alert.alert(
-        "Unable to update profile",
+      setSaveError(
         error instanceof Error ? error.message : "Please try again.",
       );
     }
@@ -94,6 +98,11 @@ export default function EditProfile() {
             onPress={form.handleSubmit(save)}
             disabled={!user}
           />
+          {saveError ? (
+            <Text style={styles.error} selectable>
+              {saveError}
+            </Text>
+          ) : null}
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -105,6 +114,8 @@ function Field({
   error,
   ...props
 }: { label: string; error?: string } & React.ComponentProps<typeof TextInput>) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -112,27 +123,28 @@ function Field({
         {...props}
         style={styles.input}
         placeholder={label}
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={palette.faint}
       />
       <Text style={styles.error}>{error}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: 20, gap: 16 },
-  title: { color: "#0F172A", fontSize: 30, fontWeight: "800" },
-  field: { gap: 5 },
-  label: { color: "#334155", fontSize: 14, fontWeight: "700" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 14,
-    minHeight: 50,
-    paddingHorizontal: 14,
-    color: "#0F172A",
-    backgroundColor: "#F8FAFC",
-    fontSize: 16,
-  },
-  error: { color: "#B91C1C", fontSize: 12, minHeight: 16 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    content: { padding: 20, gap: 16 },
+    title: { color: palette.ink, fontSize: 30, fontWeight: "800" },
+    field: { gap: 5 },
+    label: { color: palette.body, fontSize: 14, fontWeight: "700" },
+    input: {
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 14,
+      minHeight: 50,
+      paddingHorizontal: 14,
+      color: palette.ink,
+      backgroundColor: palette.inputBg,
+      fontSize: 16,
+    },
+    error: { color: palette.danger, fontSize: 12, minHeight: 16 },
+  });

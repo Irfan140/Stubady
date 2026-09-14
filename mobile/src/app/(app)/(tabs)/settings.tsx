@@ -2,7 +2,7 @@ import { useClerk, useUser } from "@clerk/expo";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -13,13 +13,27 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Avatar, Button, Card, styles as ui } from "@/components/ui";
+import { Avatar, Button, Card, useUiStyles } from "@/components/ui";
 import { hapticSelection, hapticWarning } from "@/lib/haptics";
-import { palette, radius } from "@/theme";
+import { useTheme, type ThemePreference } from "@/stores/theme-store";
+import { radius, type Palette } from "@/theme";
+
+const APPEARANCE_OPTIONS: {
+  value: ThemePreference;
+  title: string;
+  subtitle: string;
+}[] = [
+  { value: "system", title: "System", subtitle: "Follow device settings" },
+  { value: "light", title: "Light", subtitle: "Always light" },
+  { value: "dark", title: "Dark", subtitle: "Always dark" },
+];
 
 export default function Settings() {
   const { signOut } = useClerk();
   const { user } = useUser();
+  const { isDark, palette, preference, setPreference } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
   const [signingOut, setSigningOut] = useState(false);
   const confirmSignOut = () => {
@@ -42,7 +56,7 @@ export default function Settings() {
   };
   return (
     <View style={ui.screen}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[
@@ -80,6 +94,40 @@ export default function Settings() {
           />
         </Card>
         <Card>
+          <Text style={styles.cardTitle}>Appearance</Text>
+          {APPEARANCE_OPTIONS.map((option) => {
+            const selected = preference === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="button"
+                accessibilityLabel={`${option.title} theme`}
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  hapticSelection();
+                  setPreference(option.value);
+                }}
+                style={({ pressed }) => [
+                  styles.optionRow,
+                  pressed && styles.rowPressed,
+                ]}
+              >
+                <View style={styles.rowCopy}>
+                  <Text style={styles.rowTitle}>{option.title}</Text>
+                  <Text style={styles.rowSubtitle}>{option.subtitle}</Text>
+                </View>
+                {selected ? (
+                  <SymbolView
+                    name={{ ios: "checkmark", android: "check" }}
+                    tintColor={palette.primary}
+                    size={20}
+                  />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </Card>
+        <Card>
           <Text style={styles.cardTitle}>About Studbady</Text>
           <Text style={ui.muted}>
             Turn your own learning material into clear summaries, flashcards,
@@ -111,6 +159,8 @@ function MenuRow({
   subtitle: string;
   onPress: () => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   return (
     <Pressable
       accessibilityRole="button"
@@ -137,49 +187,58 @@ function MenuRow({
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: 20, gap: 14, paddingBottom: 32 },
-  heading: { marginBottom: 2 },
-  title: {
-    color: palette.ink,
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-  },
-  profileCard: { overflow: "hidden" },
-  profileGlow: {
-    position: "absolute",
-    top: -60,
-    right: -60,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: palette.primarySoft,
-  },
-  profileHeader: { flexDirection: "row", alignItems: "center", gap: 14 },
-  profileCopy: { flex: 1, gap: 3 },
-  name: { color: palette.ink, fontSize: 20, fontWeight: "800" },
-  email: { color: palette.muted, fontSize: 14 },
-  menuGroup: { paddingHorizontal: 6, paddingVertical: 6, gap: 0 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    borderRadius: radius.md,
-  },
-  rowPressed: { backgroundColor: palette.bg },
-  rowIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowCopy: { flex: 1, gap: 2 },
-  rowTitle: { color: palette.ink, fontSize: 16, fontWeight: "700" },
-  rowSubtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
-  cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
-  version: { color: palette.faint, fontSize: 12, fontWeight: "600" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    content: { padding: 20, gap: 14, paddingBottom: 32 },
+    heading: { marginBottom: 2 },
+    title: {
+      color: palette.ink,
+      fontSize: 32,
+      fontWeight: "800",
+      letterSpacing: -0.8,
+    },
+    profileCard: { overflow: "hidden" },
+    profileGlow: {
+      position: "absolute",
+      top: -60,
+      right: -60,
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      backgroundColor: palette.primarySoft,
+    },
+    profileHeader: { flexDirection: "row", alignItems: "center", gap: 14 },
+    profileCopy: { flex: 1, gap: 3 },
+    name: { color: palette.ink, fontSize: 20, fontWeight: "800" },
+    email: { color: palette.muted, fontSize: 14 },
+    menuGroup: { paddingHorizontal: 6, paddingVertical: 6, gap: 0 },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      borderRadius: radius.md,
+    },
+    rowPressed: { backgroundColor: palette.bg },
+    rowIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowCopy: { flex: 1, gap: 2 },
+    rowTitle: { color: palette.ink, fontSize: 16, fontWeight: "700" },
+    rowSubtitle: { color: palette.muted, fontSize: 13, lineHeight: 18 },
+    optionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      borderRadius: radius.md,
+    },
+    cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+    version: { color: palette.faint, fontSize: 12, fontWeight: "600" },
+  });

@@ -16,9 +16,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { Button, TextField, styles as ui } from "@/components/ui";
+import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
-import { palette, radius, shadow, type } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow, type } from "@/theme";
+import type { Palette } from "@/theme";
 
 const emailSchema = z.object({ email: z.email("Enter a valid email address") });
 const codeSchema = z.object({
@@ -36,6 +38,9 @@ const steps: { id: Step; label: string }[] = [
 ];
 
 export default function ForgotPassword() {
+  const { palette, isDark } = useTheme();
+  const ui = useUiStyles();
+  const styles = React.useMemo(() => makeStyles(palette), [palette]);
   const { signIn } = useSignIn();
   const insets = useSafeAreaInsets();
   const [step, setStep] = React.useState<Step>("email");
@@ -123,7 +128,7 @@ export default function ForgotPassword() {
       style={ui.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack.Screen options={{ title: "Reset password" }} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -265,80 +270,86 @@ export default function ForgotPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 14 },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: palette.primarySoft,
-    borderWidth: 1,
-    borderColor: palette.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    color: palette.ink,
-    fontSize: type.title.fontSize,
-    fontWeight: "800",
-    letterSpacing: type.title.letterSpacing,
-  },
-  subtitle: {
-    color: palette.muted,
-    fontSize: type.body.fontSize,
-    lineHeight: type.body.lineHeight,
-  },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    padding: 12,
-    ...shadow.card,
-  },
-  step: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
-  stepDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: palette.bg,
-    borderWidth: 1,
-    borderColor: palette.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepDotDone: {
-    backgroundColor: palette.success,
-    borderColor: palette.success,
-  },
-  stepDotActive: {
-    backgroundColor: palette.primary,
-    borderColor: palette.primary,
-  },
-  stepNumber: { color: palette.faint, fontSize: 12, fontWeight: "800" },
-  stepNumberLit: { color: "#FFFFFF" },
-  stepLabel: { color: palette.faint, fontSize: 11, fontWeight: "700", flex: 1 },
-  stepLabelActive: { color: palette.ink },
-  card: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.xl,
-    padding: 18,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: palette.line,
-    ...shadow.card,
-  },
-  errorBanner: {
-    backgroundColor: palette.dangerSoft,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  errorText: { color: palette.danger, fontSize: 13, lineHeight: 18 },
-  link: { color: palette.primary, fontWeight: "700", textAlign: "center" },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 14 },
+    iconBadge: {
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      backgroundColor: palette.primarySoft,
+      borderWidth: 1,
+      borderColor: palette.line,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    title: {
+      color: palette.ink,
+      fontSize: type.title.fontSize,
+      fontWeight: "800",
+      letterSpacing: type.title.letterSpacing,
+    },
+    subtitle: {
+      color: palette.muted,
+      fontSize: type.body.fontSize,
+      lineHeight: type.body.lineHeight,
+    },
+    stepper: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: radius.lg,
+      padding: 12,
+      ...shadow.card,
+    },
+    step: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
+    stepDot: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: palette.bg,
+      borderWidth: 1,
+      borderColor: palette.line,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stepDotDone: {
+      backgroundColor: palette.success,
+      borderColor: palette.success,
+    },
+    stepDotActive: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    stepNumber: { color: palette.faint, fontSize: 12, fontWeight: "800" },
+    stepNumberLit: { color: palette.onPrimary },
+    stepLabel: {
+      color: palette.faint,
+      fontSize: 11,
+      fontWeight: "700",
+      flex: 1,
+    },
+    stepLabelActive: { color: palette.ink },
+    card: {
+      backgroundColor: palette.surface,
+      borderRadius: radius.xl,
+      padding: 18,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: palette.line,
+      ...shadow.card,
+    },
+    errorBanner: {
+      backgroundColor: palette.dangerSoft,
+      borderWidth: 1,
+      borderColor: palette.dangerBorder,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    errorText: { color: palette.danger, fontSize: 13, lineHeight: 18 },
+    link: { color: palette.primary, fontWeight: "700", textAlign: "center" },
+  });

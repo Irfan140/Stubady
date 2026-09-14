@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Modal,
   Pressable,
@@ -9,6 +10,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MarkdownText } from "@/components/markdown-text";
+import { useTheme } from "@/stores/theme-store";
+import type { Palette } from "@/theme";
 
 export function getSummaryPreview(content: string) {
   return content
@@ -30,6 +33,8 @@ export function SummaryReaderModal({
   content: string;
   onClose: () => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
   return (
     <Modal
@@ -85,50 +90,51 @@ export function SummaryReaderModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
-    paddingHorizontal: 16,
-    justifyContent: "center",
-  },
-  card: {
-    maxHeight: "88%",
-    borderRadius: 26,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.22)",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  heading: { flex: 1, gap: 4 },
-  eyebrow: {
-    color: "#4F46E5",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.3,
-  },
-  title: { color: "#0F172A", fontSize: 21, fontWeight: "800" },
-  close: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-  },
-  closeText: {
-    color: "#334155",
-    fontSize: 25,
-    lineHeight: 28,
-    fontWeight: "400",
-  },
-  content: { padding: 20, paddingBottom: 28 },
-  empty: { color: "#64748B", fontSize: 15 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: "rgba(15, 23, 42, 0.62)",
+      paddingHorizontal: 16,
+      justifyContent: "center",
+    },
+    card: {
+      maxHeight: "88%",
+      borderRadius: 26,
+      overflow: "hidden",
+      backgroundColor: palette.surface,
+      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.22)",
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.line,
+    },
+    heading: { flex: 1, gap: 4 },
+    eyebrow: {
+      color: palette.primary,
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1.3,
+    },
+    title: { color: palette.ink, fontSize: 21, fontWeight: "800" },
+    close: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.bg,
+    },
+    closeText: {
+      color: palette.body,
+      fontSize: 25,
+      lineHeight: 28,
+      fontWeight: "400",
+    },
+    content: { padding: 20, paddingBottom: 28 },
+    empty: { color: palette.muted, fontSize: 15 },
+  });

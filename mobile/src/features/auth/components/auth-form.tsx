@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -19,9 +19,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, TextField, styles as ui } from "@/components/ui";
+import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
-import { palette, radius, shadow, type } from "@/theme";
+import { useTheme } from "@/stores/theme-store";
+import { radius, shadow, type } from "@/theme";
+import type { Palette } from "@/theme";
 import {
   credentialsSchema,
   verificationSchema,
@@ -36,6 +38,9 @@ const highlights = [
 ];
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+  const { palette, isDark } = useTheme();
+  const ui = useUiStyles();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isSignUp = mode === "sign-up";
@@ -139,7 +144,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       style={ui.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -343,112 +348,113 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 20 },
-  header: { gap: 10 },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  logoBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadow.card,
-  },
-  logo: { width: 34, height: 34, borderRadius: 10 },
-  pill: {
-    backgroundColor: palette.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pillText: {
-    color: palette.primaryDeep,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.4,
-  },
-  title: {
-    color: palette.ink,
-    fontSize: type.display.fontSize,
-    fontWeight: "800",
-    letterSpacing: type.display.letterSpacing,
-  },
-  subtitle: {
-    color: palette.muted,
-    fontSize: type.body.fontSize,
-    lineHeight: type.body.lineHeight,
-  },
-  highlights: {
-    gap: 8,
-    marginTop: 4,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadow.card,
-  },
-  highlightRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  highlightText: { color: palette.body, fontSize: 14, fontWeight: "600" },
-  card: {
-    backgroundColor: palette.surface,
-    borderRadius: radius.xl,
-    padding: 18,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: palette.line,
-    ...shadow.card,
-  },
-  cardTitle: {
-    color: palette.ink,
-    fontSize: type.h2.fontSize,
-    fontWeight: "800",
-  },
-  passwordWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: palette.line,
-    borderRadius: radius.md,
-    backgroundColor: "#FAFBFE",
-    paddingRight: 6,
-  },
-  passwordInput: {
-    flex: 1,
-    minHeight: 50,
-    paddingHorizontal: 14,
-    color: palette.ink,
-    fontSize: 16,
-  },
-  eyeButton: { padding: 8 },
-  errorBanner: {
-    backgroundColor: palette.dangerSoft,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  errorText: { color: palette.danger, fontSize: 13, lineHeight: 18 },
-  switch: { color: palette.muted, textAlign: "center", fontSize: 14 },
-  link: { color: palette.primary, fontWeight: "700" },
-  forgot: {
-    color: palette.primary,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  transition: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: "rgba(244, 246, 251, 0.96)",
-  },
-  transitionTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
-  transitionText: { color: palette.muted, fontSize: 14 },
-});
+const makeStyles = (palette: Palette) =>
+  StyleSheet.create({
+    content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 20 },
+    header: { gap: 10 },
+    brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    logoBadge: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      alignItems: "center",
+      justifyContent: "center",
+      ...shadow.card,
+    },
+    logo: { width: 34, height: 34, borderRadius: 10 },
+    pill: {
+      backgroundColor: palette.primarySoft,
+      borderRadius: radius.pill,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    pillText: {
+      color: palette.primaryDeep,
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1.4,
+    },
+    title: {
+      color: palette.ink,
+      fontSize: type.display.fontSize,
+      fontWeight: "800",
+      letterSpacing: type.display.letterSpacing,
+    },
+    subtitle: {
+      color: palette.muted,
+      fontSize: type.body.fontSize,
+      lineHeight: type.body.lineHeight,
+    },
+    highlights: {
+      gap: 8,
+      marginTop: 4,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: radius.lg,
+      padding: 14,
+      ...shadow.card,
+    },
+    highlightRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    highlightText: { color: palette.body, fontSize: 14, fontWeight: "600" },
+    card: {
+      backgroundColor: palette.surface,
+      borderRadius: radius.xl,
+      padding: 18,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: palette.line,
+      ...shadow.card,
+    },
+    cardTitle: {
+      color: palette.ink,
+      fontSize: type.h2.fontSize,
+      fontWeight: "800",
+    },
+    passwordWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: radius.md,
+      backgroundColor: palette.inputBg,
+      paddingRight: 6,
+    },
+    passwordInput: {
+      flex: 1,
+      minHeight: 50,
+      paddingHorizontal: 14,
+      color: palette.ink,
+      fontSize: 16,
+    },
+    eyeButton: { padding: 8 },
+    errorBanner: {
+      backgroundColor: palette.dangerSoft,
+      borderWidth: 1,
+      borderColor: palette.dangerBorder,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    errorText: { color: palette.danger, fontSize: 13, lineHeight: 18 },
+    switch: { color: palette.muted, textAlign: "center", fontSize: 14 },
+    link: { color: palette.primary, fontWeight: "700" },
+    forgot: {
+      color: palette.primary,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    transition: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      backgroundColor: `${palette.bg}F5`,
+    },
+    transitionTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+    transitionText: { color: palette.muted, fontSize: 14 },
+  });
