@@ -67,9 +67,6 @@ export default function Settings() {
                 {user?.primaryEmailAddress?.emailAddress ??
                   "No email available"}
               </Text>
-              <View style={styles.planPill}>
-                <Text style={styles.planText}>Free plan</Text>
-              </View>
             </View>
           </View>
         </Card>
@@ -80,14 +77,6 @@ export default function Settings() {
             title="Edit profile"
             subtitle="Name, photo, and account details"
             onPress={() => router.push("/edit-profile")}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon={{ ios: "star.circle", android: "workspace_premium" }}
-            tint={palette.accent}
-            title="Premium"
-            subtitle="Subscriptions and premium tools"
-            onPress={() => router.push("/subscriptions")}
           />
         </Card>
         <Card>
@@ -171,22 +160,7 @@ const styles = StyleSheet.create({
   profileCopy: { flex: 1, gap: 3 },
   name: { color: palette.ink, fontSize: 20, fontWeight: "800" },
   email: { color: palette.muted, fontSize: 14 },
-  planPill: {
-    alignSelf: "flex-start",
-    marginTop: 4,
-    backgroundColor: palette.successSoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  planText: { color: palette.success, fontSize: 12, fontWeight: "700" },
   menuGroup: { paddingHorizontal: 6, paddingVertical: 6, gap: 0 },
-  divider: {
-    height: 1,
-    backgroundColor: palette.line,
-    marginLeft: 62,
-    marginRight: 8,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",

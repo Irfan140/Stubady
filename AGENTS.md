@@ -82,7 +82,6 @@ Before writing any Expo/EAS/React Native code:
 - Pushed screens hide the native header (`headerShown: false`) and render a custom JS back bar (`router.back()` + `SymbolView` chevron) — see `(tabs)/index.tsx`, `study-set/[id].tsx`, `study-set/[id]/{summaries,decks,conversations}.tsx`, `chat/[id].tsx`.
 - The tab bar is floating/absolute (`(tabs)/_layout.tsx`) — every tab screen must clear it with safe-area-aware bottom padding (list `paddingBottom`, FAB `bottom`), or content/buttons end up underneath it.
 - OTA-safe by default: prefer JS-only changes (styles, JSX, existing deps) so updates ship via EAS Update without a rebuild. New native modules, config plugins, or `app.config.ts` changes require a new build — flag this before doing it.
-- `Premium` tab (`(tabs)/premium.tsx`) is a blank placeholder; settings shows a `Free plan` tag. RevenueCat subscriptions are planned but not implemented — do not add paywall copy or SDK without being asked.
 
 ## Building with EAS
 

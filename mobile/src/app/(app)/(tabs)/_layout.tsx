@@ -68,20 +68,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="premium"
-        options={{
-          title: "Premium",
-          tabBarLabel: "Premium",
-          tabBarIcon: ({ color, size }) => (
-            <SymbolView
-              name={{ android: "workspace_premium", ios: "star.circle" }}
-              tintColor={color}
-              size={size}
-            />
-          ),
-        }}
-      />
     </Tabs>
   );
 }
