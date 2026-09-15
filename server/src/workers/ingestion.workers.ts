@@ -19,10 +19,6 @@ export type IngestionWorkerHandle = {
   close: () => Promise<void>;
 };
 
-let workerReady = false;
-
-export const isIngestionWorkerReady = (): boolean => workerReady;
-
 /**
  * Starts the background ingestion worker (own connection — BullMQ workers
  * block on their connection and must not share one with enqueuers).
@@ -35,14 +31,6 @@ export const startIngestionWorker = (): IngestionWorkerHandle => {
     processIngestionJob,
     { connection, concurrency: 2 },
   );
-
-  workerReady = false;
-  connection.on("ready", () => {
-    workerReady = true;
-  });
-  connection.on("close", () => {
-    workerReady = false;
-  });
 
   worker.on("failed", (job, err) => {
     logger.error(
@@ -82,7 +70,6 @@ export const startIngestionWorker = (): IngestionWorkerHandle => {
   });
 
   const close = async (): Promise<void> => {
-    workerReady = false;
     await worker.close();
     await connection.quit();
   };

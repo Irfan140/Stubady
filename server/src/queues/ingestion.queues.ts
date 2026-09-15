@@ -36,3 +36,12 @@ export const closeIngestionQueue = async (): Promise<void> => {
   await ingestionQueue.close();
   await connection.quit();
 };
+
+/**
+ * Liveness probe for the ingestion pipeline. The API no longer runs the
+ * worker in-process (`src/worker.ts` does), so readiness checks reachability
+ * of the shared queue instead of a local worker flag.
+ */
+export const pingIngestionQueue = async (): Promise<void> => {
+  await connection.ping();
+};

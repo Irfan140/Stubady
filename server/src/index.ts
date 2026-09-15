@@ -5,10 +5,12 @@ import { prisma } from "./lib/prisma";
 import { endAllStreams } from "./lib/stream-registry";
 import { rateLimitRedis } from "./middlewares/rate-limits.middlewares";
 import { closeIngestionQueue } from "./queues/ingestion.queues";
-import { startIngestionWorker } from "./workers/ingestion.workers";
 
-const ingestionWorker = startIngestionWorker();
-
+/**
+ * API entrypoint (`bun run src/index.ts`). Serves HTTP only — background
+ * ingestion runs in a separate OS process (`src/worker.ts`). The queue
+ * client stays open here because the API enqueues jobs.
+ */
 const server = app.listen(env.port, () => {
   logger.info(`Server is running on port ${env.port}`);
 });
@@ -17,7 +19,7 @@ const FORCE_EXIT_MS = 10_000;
 
 /**
  * Graceful shutdown: stop accepting new connections, drain background work,
- * then close every client (worker, queue, rate-limit Redis, Prisma).
+ * then close every client (queue, rate-limit Redis, Prisma).
  */
 const shutdown = async (signal: string): Promise<void> => {
   logger.info({ signal }, "shutdown initiated");
@@ -39,7 +41,6 @@ const shutdown = async (signal: string): Promise<void> => {
   });
 
   await Promise.allSettled([
-    ingestionWorker.close(),
     closeIngestionQueue(),
     rateLimitRedis.quit(),
     prisma.$disconnect(),

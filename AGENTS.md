@@ -38,6 +38,7 @@ bun run --cwd web lint               # oxlint inside web/ (uses web/.oxlintrc.js
 bun run --cwd web build              # tsc -b + vite build (also typechecks web)
 
 bun run --cwd server dev
+bun run --cwd server dev:worker     # ingestion worker (separate process; run alongside dev)
 npm run --prefix mobile start
 bun run --cwd web dev
 
@@ -55,7 +56,7 @@ Run `bun run --cwd server lint` + `bun run --cwd server format:check`, `npm run 
 
 ## Server conventions
 
-- Runtime: `Bun` + `Express 5`, entry `server/src/index.ts` (re-exports `server/src/app.ts` for tests).
+- Runtime: `Bun` + `Express 5`, API entry `server/src/index.ts` (re-exports `server/src/app.ts` for tests), worker entry `server/src/worker.ts` (BullMQ ingestion, separate process).
 - DB: Prisma 7 with `pgvector` (`vector(1536)` for `text-embedding-3-small`), datasource `postgresql` + `extensions=[vector]`. Config in `server/prisma7.config.ts`, schema `server/prisma/schema.prisma`.
 - Infra: `ioredis` + `BullMQ` (ingestion queue), `pino` + `pino-http` (redacted), `helmet`/`cors`/`compression`/`express-rate-limit`+`rate-limit-redis`.
 - Auth: `@clerk/express` `verifyToken` via `requireAuth` middleware; `x-access-token` fallback supported.
