@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 import Redis from "ioredis";
 import { RedisStore } from "rate-limit-redis";
@@ -96,8 +96,33 @@ export const generalLimiter = rateLimit({
 });
 
 /**
+ * Fail-closed guard for expensive AI generation endpoints (chat,
+ * flashcards, summaries, ingestion). When Redis is unreachable the
+ * rate-limit counters cannot run — reject with 429 instead of letting
+ * unlimited OpenAI spend through. The general limiter below intentionally
+ * stays fail-open so the app remains usable during a Redis blip.
+ *
+ * `wait` is allowed through: on cold boot the client has not connected yet
+ * (lazyConnect) and the limiter itself establishes the connection. Any
+ * later non-ready state means a dropped connection → reject.
+ */
+export const requireRedisForAi = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (rateLimitRedis.status !== "ready" && rateLimitRedis.status !== "wait") {
+    res.status(429).json({ error: "Too many requests" });
+    return;
+  }
+  next();
+};
+
+/**
  * Strict bucket keyed per authenticated user for expensive AI generation
- * endpoints (chat, flashcards, summaries, ingestion).
+ * endpoints (chat, flashcards, summaries, ingestion). Always mounted after
+ * `requireRedisForAi`; `passOnStoreError: false` is the second layer so a
+ * Redis failure surfacing inside the limiter still fails closed.
  */
 export const aiLimiter = rateLimit({
   windowMs: RATE_LIMITS.windowMs,
@@ -105,6 +130,6 @@ export const aiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: keyByUserOrIp,
-  passOnStoreError: true,
+  passOnStoreError: false,
   store: createStore("rl-ai"),
 });
