@@ -107,6 +107,39 @@ services:
 
     stop_grace_period: 15s
 
+  # Background ingestion worker (BullMQ). Same image as the API, separate
+  # process — no HTTP port. Shares Postgres + Redis with the server service.
+  worker:
+    image: irfan140/stubudy-server:latest
+    container_name: studybuddy-worker
+    restart: unless-stopped
+
+    command: ["bun", "run", "src/worker.ts"]
+
+    env_file:
+      - ./server/.env.production
+
+    environment:
+      NODE_ENV: production
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - stubady-net
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Longer than the API so an in-flight ingestion job can drain on deploy.
+    stop_grace_period: 30s
+
 networks:
   stubady-net:
     driver: bridge

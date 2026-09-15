@@ -38,6 +38,7 @@ bun run --cwd web lint               # oxlint inside web/ (uses web/.oxlintrc.js
 bun run --cwd web build              # tsc -b + vite build (also typechecks web)
 
 bun run --cwd server dev
+bun run --cwd server dev:worker     # ingestion worker (separate process; run alongside dev)
 npm run --prefix mobile start
 bun run --cwd web dev
 
@@ -55,14 +56,14 @@ Run `bun run --cwd server lint` + `bun run --cwd server format:check`, `npm run 
 
 ## Server conventions
 
-- Runtime: `Bun` + `Express 5`, entry `server/src/index.ts` (re-exports `server/src/app.ts` for tests).
+- Runtime: `Bun` + `Express 5`, API entry `server/src/index.ts` (re-exports `server/src/app.ts` for tests), worker entry `server/src/worker.ts` (BullMQ ingestion, separate process).
 - DB: Prisma 7 with `pgvector` (`vector(1536)` for `text-embedding-3-small`), datasource `postgresql` + `extensions=[vector]`. Config in `server/prisma7.config.ts`, schema `server/prisma/schema.prisma`.
 - Infra: `ioredis` + `BullMQ` (ingestion queue), `pino` + `pino-http` (redacted), `helmet`/`cors`/`compression`/`express-rate-limit`+`rate-limit-redis`.
 - Auth: `@clerk/express` `verifyToken` via `requireAuth` middleware; `x-access-token` fallback supported.
 - AI: `LangChain` + `LangGraph` + `OpenAI` (chat + embeddings), `Firecrawl` for web sources, R2 (S3) for PDFs.
-- Structure: `src/config/`, `src/lib/`, `src/middlewares/`, `src/routes/`, `src/services/`, `src/repositories/`, `src/schemas/`, `src/queues/`, `src/workers/`, `src/processors/`, `src/utils/`.
+- Structure: `src/config/`, `src/lib/`, `src/middlewares/`, `src/routes/`, `src/controllers/`, `src/services/`, `src/repositories/`, `src/schemas/`, `src/queues/`, `src/workers/`, `src/processors/`, `src/utils/`.
 - Env: validated with `zod` in `src/config/env.ts` (loads `.env` then `.env.development`). Never hardcode secrets — use `env.*`.
-- No `console.log` — use `pino` logger. Keep comments minimal — explain *why*, not *what*.
+- No `console.log` — use `pino` logger. Keep comments minimal — explain _why_, not _what_.
 
 ## Mobile conventions — Expo has changed, do not trust training data
 
@@ -105,5 +106,5 @@ Profiles in `mobile/eas.json` (development/preview/production). Secrets injected
 - Do not use `yarn`/`pnpm add` — use `npx --prefix mobile expo install` (mobile) or `bun add` (server) and verify SDK compatibility.
 - Keep lockfiles per package (`server/bun.lock`, `mobile/package-lock.json`); do not delete.
 - For Prisma changes: edit `server/prisma/schema.prisma`, then `bun --cwd=server x prisma migrate dev` and verify `prisma generate`.
-- For new routes/screens: follow existing `repositories → services → routes → schemas` (server) and `src/features/*/api.ts` + `src/app/` (mobile) patterns.
+- For new routes/screens: follow existing `repositories → services → controllers → routes → schemas` (server) and `src/features/*/api.ts` + `src/app/` (mobile) patterns.
 - For web: Bun + Vite SPA (`web/`), lint with `oxlint` (`bun run --cwd web lint`), typecheck via `bun run --cwd web build`. Hash routes live in `web/src/router.ts` (`home` / `privacy` / `delete-account`); keep marketing claims in `web/src/pages/Home.tsx` consistent with shipped app features.
