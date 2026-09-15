@@ -1,7 +1,7 @@
 import { Firecrawl } from "firecrawl";
 
 import { env } from "../config/env";
-import { PROVIDER_TIMEOUTS } from "../config/constants";
+import { PROVIDER_TIMEOUTS } from "../constants/providers.constants";
 import { withTimeout } from "../utils/async.utils";
 
 export const fetchWebText = async (url: string): Promise<string> => {

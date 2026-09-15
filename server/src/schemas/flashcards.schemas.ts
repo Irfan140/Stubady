@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-export const FLASHCARD_COUNT_DEFAULT = 12;
-export const FLASHCARD_COUNT_LIMIT = 20;
+import { FLASHCARD_COUNT_LIMIT } from "../constants/flashcards.constants";
 
 /** Body for POST /study-sets/:id/flashcards */
 export const generateFlashcardsInputSchema = z.object({

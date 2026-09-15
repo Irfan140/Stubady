@@ -61,7 +61,7 @@ Run `bun run --cwd server lint` + `bun run --cwd server format:check`, `npm run 
 - Infra: `ioredis` + `BullMQ` (ingestion queue), `pino` + `pino-http` (redacted), `helmet`/`compression`/`express-rate-limit`+`rate-limit-redis`.
 - Auth: `@clerk/express` `verifyToken` via `requireAuth` middleware; `x-access-token` fallback supported.
 - AI: `LangChain` + `LangGraph` + `OpenAI` (chat + embeddings), `Firecrawl` for web sources, R2 (S3) for PDFs.
-- Structure: `src/config/`, `src/lib/`, `src/middlewares/`, `src/routes/`, `src/controllers/`, `src/services/`, `src/repositories/`, `src/schemas/`, `src/queues/`, `src/workers/`, `src/processors/`, `src/utils/`.
+- Structure: `src/config/`, `src/constants/`, `src/lib/`, `src/middlewares/`, `src/routes/`, `src/controllers/`, `src/services/`, `src/repositories/`, `src/schemas/`, `src/queues/`, `src/workers/`, `src/processors/`, `src/utils/`.
 - Env: validated with `zod` in `src/config/env.ts` (loads `.env` then `.env.development`). Never hardcode secrets — use `env.*`.
 - No `console.log` — use `pino` logger. Keep comments minimal — explain _why_, not _what_.
 

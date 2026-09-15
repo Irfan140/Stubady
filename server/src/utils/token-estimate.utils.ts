@@ -1,4 +1,4 @@
-import { TOKEN_CHARS_PER_TOKEN } from "../config/constants";
+import { TOKEN_CHARS_PER_TOKEN } from "../constants/rag.constants";
 
 export const estimateTokens = (text: string): number =>
   Math.ceil(text.length / TOKEN_CHARS_PER_TOKEN);

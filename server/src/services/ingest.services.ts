@@ -1,4 +1,11 @@
-import { SOURCE_STATUSES } from "../config/constants";
+import {
+  CHUNK_OVERLAP,
+  CHUNK_SIZE,
+  EMBED_BATCH_SIZE,
+  MAX_CHUNKS,
+  SOURCE_STATUSES,
+} from "../constants/sources.constants";
+import { logger } from "../config/logger";
 import { embeddingModel } from "../lib/ai";
 import {
   deleteChunksBySourceId,
@@ -13,9 +20,6 @@ import {
 import { HttpError } from "../utils/http-error.utils";
 import { extractPdfText } from "./pdf.services";
 import { fetchWebText } from "./web.services";
-
-const CHUNK_SIZE = 2000;
-const CHUNK_OVERLAP = 200;
 
 export const chunkText = (text: string): string[] => {
   const normalized = text.replace(/\s+/g, " ").trim();
@@ -53,6 +57,17 @@ const resolveSourceText = async (source: SourceRecord): Promise<string> => {
   }
 };
 
+const embedInBatches = async (chunks: string[]): Promise<number[][]> => {
+  const vectors: number[][] = [];
+  for (let start = 0; start < chunks.length; start += EMBED_BATCH_SIZE) {
+    const batch = await embeddingModel.embedDocuments(
+      chunks.slice(start, start + EMBED_BATCH_SIZE),
+    );
+    vectors.push(...batch);
+  }
+  return vectors;
+};
+
 const markFailed = async (sourceId: string, message: string): Promise<void> => {
   await updateSource(sourceId, {
     status: SOURCE_STATUSES.failed,
@@ -80,14 +95,22 @@ export const ingestSource = async (
 
   try {
     const text = await resolveSourceText(source);
-    const chunks = chunkText(text);
+    let chunks = chunkText(text);
 
     if (chunks.length === 0) {
       await markFailed(sourceId, "No extractable text found in source");
       throw new HttpError(422, "No extractable text found in source");
     }
 
-    const embeddings = await embeddingModel.embedDocuments(chunks);
+    if (chunks.length > MAX_CHUNKS) {
+      logger.warn(
+        { sourceId, chunkCount: chunks.length, maxChunks: MAX_CHUNKS },
+        "source exceeds chunk cap; ingesting first chunks only",
+      );
+      chunks = chunks.slice(0, MAX_CHUNKS);
+    }
+
+    const embeddings = await embedInBatches(chunks);
 
     await deleteChunksBySourceId(sourceId);
 

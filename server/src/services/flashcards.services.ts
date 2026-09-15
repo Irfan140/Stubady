@@ -1,6 +1,6 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-import { PROMPT_VERSIONS } from "../config/constants";
+import { PROMPT_VERSIONS } from "../constants/prompts.constants";
 import { logger } from "../config/logger";
 import { flashcardModel } from "../lib/ai";
 import {
@@ -14,10 +14,10 @@ import {
 import { findStudySetForUser } from "../repositories/study-sets.repositories";
 import {
   buildFlashcardsOutputSchema,
-  FLASHCARD_COUNT_DEFAULT,
   type Flashcard,
   type GenerateFlashcardsInput,
 } from "../schemas/flashcards.schemas";
+import { FLASHCARD_COUNT_DEFAULT } from "../constants/flashcards.constants";
 import { HttpError } from "../utils/http-error.utils";
 import {
   paginate,

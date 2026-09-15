@@ -1,7 +1,4 @@
-export const PAGINATION_DEFAULTS = {
-  limit: 20,
-  maxLimit: 100,
-} as const;
+import { PAGINATION_DEFAULTS } from "../constants/pagination.constants";
 
 export type Pagination = { limit: number; offset: number };
 

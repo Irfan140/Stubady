@@ -1,5 +1,6 @@
 import { env } from "./config/env";
 import { logger } from "./config/logger";
+import { FORCE_EXIT_MS } from "./constants/shutdown.constants";
 import { app } from "./app";
 import { prisma } from "./lib/prisma";
 import { endAllStreams } from "./lib/stream-registry";
@@ -14,8 +15,6 @@ import { closeIngestionQueue } from "./queues/ingestion.queues";
 const server = app.listen(env.port, () => {
   logger.info(`Server is running on port ${env.port}`);
 });
-
-const FORCE_EXIT_MS = 10_000;
 
 /**
  * Graceful shutdown: stop accepting new connections, drain background work,

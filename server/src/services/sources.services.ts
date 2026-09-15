@@ -1,18 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  MAX_PDF_SIZE_BYTES,
   SOURCE_STATUSES,
   SOURCE_TYPES,
   STALE_PROCESSING_MS,
-} from "../config/constants";
-import { R2_UPLOAD_EXPIRES_SECONDS } from "../lib/r2";
+} from "../constants/sources.constants";
+import { R2_UPLOAD_EXPIRES_SECONDS } from "../constants/storage.constants";
 import { logger } from "../config/logger";
-import {
-  createPdfUploadUrl,
-  deleteObject,
-  headObject,
-  MAX_PDF_SIZE_BYTES,
-} from "../lib/r2";
+import { createPdfUploadUrl, deleteObject, headObject } from "../lib/r2";
 import { enqueueIngestionJob } from "../queues/ingestion.queues";
 import {
   createSource as persistSource,

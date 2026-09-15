@@ -1,7 +1,7 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { PDFParse } from "pdf-parse";
 
-import { PROVIDER_TIMEOUTS } from "../config/constants";
+import { PROVIDER_TIMEOUTS } from "../constants/providers.constants";
 import { r2Client, r2Config } from "../lib/r2";
 import { withTimeout } from "../utils/async.utils";
 

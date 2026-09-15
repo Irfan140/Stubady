@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { REQUEST_TIMEOUT_MS } from "@/constants/api.constants";
 import { fetch as expoFetch } from "expo/fetch";
 import { z } from "zod";
 
@@ -13,8 +14,6 @@ export class ApiError extends Error {
 }
 
 type GetToken = () => Promise<string | null>;
-const REQUEST_TIMEOUT_MS = 20_000;
-export const AI_REQUEST_TIMEOUT_MS = 90_000;
 
 const fetchWithTimeout = async (
   url: string,
@@ -50,6 +49,18 @@ const streamEventSchema = z.discriminatedUnion("type", [
 ]);
 
 export type StreamEvent = z.infer<typeof streamEventSchema>;
+
+// Unknown event versions and malformed lines are skipped (null) instead of
+// thrown — one backend change must not abort the whole chat stream. The
+// server-sent `error` event still flows through to the caller.
+const parseStreamLine = (line: string): StreamEvent | null => {
+  try {
+    const parsed = streamEventSchema.safeParse(JSON.parse(line.slice(6)));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+};
 
 export async function apiRequest<T>(
   getToken: GetToken,
@@ -160,14 +171,18 @@ export async function apiStreamRequest(
           .split("\n")
           .find((value) => value.startsWith("data: "));
         if (!line) continue;
-        onEvent(streamEventSchema.parse(JSON.parse(line.slice(6))));
+        const event = parseStreamLine(line);
+        if (event) onEvent(event);
       }
     }
     if (buffer.trim()) {
       const line = buffer
         .split("\n")
         .find((value) => value.startsWith("data: "));
-      if (line) onEvent(streamEventSchema.parse(JSON.parse(line.slice(6))));
+      if (line) {
+        const event = parseStreamLine(line);
+        if (event) onEvent(event);
+      }
     }
   } finally {
     signal?.removeEventListener("abort", abortReader);

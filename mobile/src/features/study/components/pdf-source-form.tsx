@@ -10,12 +10,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { uploadFileToPresignedUrl } from "@/lib/storage/upload";
+import { MAX_PDF_SIZE_BYTES } from "@/constants/uploads.constants";
+import {
+  uploadFileToPresignedUrl,
+  isUploadCancelled,
+} from "@/lib/storage/upload";
 import { useTheme } from "@/stores/theme-store";
 import type { Palette } from "@/theme";
 import { useCompletePdfUpload, useCreatePdfUpload } from "../api";
-
-const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
 
 type UploadStatus =
   "picking" | "preparing" | "uploading" | "processing" | "error";
@@ -45,11 +47,17 @@ export function PdfSourceForm({
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
   const started = useRef(false);
+  const abortUpload = useRef<AbortController | null>(null);
   const [status, setStatus] = useState<UploadStatus | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Abandon a stuck upload if the form unmounts mid-flight.
+  useEffect(() => () => abortUpload.current?.abort(), []);
 
   const selectAndUpload = useCallback(async () => {
     setError(null);
+    setProgress(null);
     setStatus("picking");
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -78,16 +86,29 @@ export function PdfSourceForm({
       });
 
       setStatus("uploading");
+      const controller = new AbortController();
+      abortUpload.current = controller;
       await uploadFileToPresignedUrl({
         fileUri: asset.uri,
         uploadUrl: session.uploadUrl,
         contentType: "application/pdf",
+        signal: controller.signal,
+        onProgress: ({ loaded, total }) => {
+          setProgress(total > 0 ? loaded / total : null);
+        },
       });
+      abortUpload.current = null;
 
       setStatus("processing");
       await completeUpload.mutateAsync(session.source.id);
       onDone();
     } catch (uploadError) {
+      abortUpload.current = null;
+      // User-cancelled: close silently instead of showing an error card.
+      if (isUploadCancelled(uploadError)) {
+        onClose();
+        return;
+      }
       setStatus("error");
       setError(
         uploadError instanceof Error
@@ -129,7 +150,22 @@ export function PdfSourceForm({
         ) : (
           <>
             <ActivityIndicator color={palette.primary} size="small" />
-            <Text style={styles.statusText}>{STATUS_LABEL[status]}</Text>
+            <Text style={styles.statusText}>
+              {STATUS_LABEL[status]}
+              {status === "uploading" && progress != null
+                ? ` ${Math.round(progress * 100)}%`
+                : ""}
+            </Text>
+            {status === "uploading" ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel upload"
+                onPress={() => abortUpload.current?.abort()}
+                style={styles.cancel}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+            ) : null}
           </>
         )}
       </View>
@@ -164,6 +200,11 @@ const makeStyles = (palette: Palette) =>
       fontWeight: "600",
       flexShrink: 1,
     },
+    cancel: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    cancelText: { color: palette.muted, fontSize: 13, fontWeight: "700" },
     errorText: { color: "#FECACA", fontSize: 13, lineHeight: 18, flex: 1 },
     dismiss: {
       paddingHorizontal: 14,

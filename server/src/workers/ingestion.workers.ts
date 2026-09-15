@@ -1,7 +1,8 @@
 import Redis from "ioredis";
 import { Worker } from "bullmq";
 
-import { QUEUE_NAMES, SOURCE_STATUSES } from "../config/constants";
+import { QUEUE_NAMES } from "../constants/queues.constants";
+import { SOURCE_STATUSES } from "../constants/sources.constants";
 import { env } from "../config/env";
 import { logger } from "../config/logger";
 import { processIngestionJob } from "../processors/ingestion.processors";

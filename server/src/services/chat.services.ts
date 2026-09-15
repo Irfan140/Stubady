@@ -8,7 +8,8 @@ import {
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 
-import { CHAT_LIMITS, CHAT_ROLES, PROMPT_VERSIONS } from "../config/constants";
+import { CHAT_LIMITS, CHAT_ROLES } from "../constants/chat.constants";
+import { PROMPT_VERSIONS } from "../constants/prompts.constants";
 import { chatModel } from "../lib/ai";
 import {
   findConversationForUser,
