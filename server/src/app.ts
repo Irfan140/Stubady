@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import compression from "compression";
-import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
@@ -17,7 +16,10 @@ const app = express();
 
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors({ origin: true }));
+// No CORS: only native mobile clients and server-to-server callers consume
+// this API, and neither enforces CORS (browser-only mechanism). If a web
+// client ever needs access, add an explicit origin allowlist here instead
+// of reflecting origins.
 app.use(
   pinoHttp({
     logger,

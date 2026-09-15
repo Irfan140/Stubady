@@ -1,11 +1,7 @@
 import Redis from "ioredis";
 import { Worker } from "bullmq";
 
-import {
-  QUEUE_NAMES,
-  SOURCE_STATUSES,
-  STALE_PROCESSING_MS,
-} from "../config/constants";
+import { QUEUE_NAMES, SOURCE_STATUSES } from "../config/constants";
 import { env } from "../config/env";
 import { logger } from "../config/logger";
 import { processIngestionJob } from "../processors/ingestion.processors";
@@ -45,13 +41,15 @@ export const startIngestionWorker = (): IngestionWorkerHandle => {
         job.data.sourceId,
         job.data.userId,
       );
-      const staleProcessing =
-        source?.status === SOURCE_STATUSES.processing &&
-        Date.now() - source.updated_at.getTime() > STALE_PROCESSING_MS;
 
+      // Attempts are exhausted, so no later retry will pick this source up.
+      // A `processing` row here means the worker died on its own claim —
+      // without this branch the source would sit at `processing` forever.
+      // `ready`/`failed` rows are left untouched.
       if (
         source &&
-        (source.status === SOURCE_STATUSES.pending || staleProcessing)
+        (source.status === SOURCE_STATUSES.pending ||
+          source.status === SOURCE_STATUSES.processing)
       ) {
         await updateSource(source.id, {
           status: SOURCE_STATUSES.failed,

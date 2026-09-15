@@ -5,7 +5,10 @@ import {
   getDeck,
   listDecks,
 } from "../controllers/flashcards.controllers";
-import { aiLimiter } from "../middlewares/rate-limits.middlewares";
+import {
+  aiLimiter,
+  requireRedisForAi,
+} from "../middlewares/rate-limits.middlewares";
 import { validate } from "../middlewares/validate.middlewares";
 import { generateFlashcardsInputSchema } from "../schemas/flashcards.schemas";
 import { deckIdParamSchema, idParamSchema } from "../schemas/params.schemas";
@@ -13,6 +16,7 @@ import { deckIdParamSchema, idParamSchema } from "../schemas/params.schemas";
 export const flashcardsRouter = Router();
 flashcardsRouter.post(
   "/:id/flashcards",
+  requireRedisForAi,
   aiLimiter,
   validate(idParamSchema, "params"),
   validate(generateFlashcardsInputSchema),

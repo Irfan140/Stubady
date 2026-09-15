@@ -1,6 +1,7 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import type { LayoutChangeEvent } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -26,7 +27,34 @@ export default function Deck() {
   const query = useDeck(studySetId, id);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  // Natural content heights of both faces. The container takes the taller
+  // one so short cards stay compact while the flip always overlaps exactly.
+  const [faceHeights, setFaceHeights] = useState({ front: 0, back: 0 });
+  const onFaceLayout =
+    (face: "front" | "back") =>
+    ({ nativeEvent }: LayoutChangeEvent) => {
+      const { height } = nativeEvent.layout;
+      setFaceHeights((prev) =>
+        prev[face] === height ? prev : { ...prev, [face]: height },
+      );
+    };
+  const contentHeight = Math.max(faceHeights.front, faceHeights.back);
   const rotation = useSharedValue(0);
+  // Box height lives on the UI thread so it morphs smoothly when moving
+  // between cards of different lengths instead of jumping.
+  const boxHeight = useSharedValue(0);
+  useEffect(() => {
+    if (contentHeight > 0) {
+      boxHeight.value = withTiming(contentHeight, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
+  }, [contentHeight, boxHeight]);
+  const boxAnimatedStyle = useAnimatedStyle(() => ({
+    height: boxHeight.value,
+    minHeight: boxHeight.value > 0 ? 0 : 200,
+  }));
   // so one continuous flip never exposes the next card's answer.
   const applyCard = (nextIndex: number) => {
     setIndex(nextIndex);
@@ -52,7 +80,10 @@ export default function Deck() {
     const next = !revealed;
     setRevealed(next);
     cancelAnimation(rotation);
-    rotation.value = withTiming(next ? 180 : 0, { duration: 420 });
+    rotation.value = withTiming(next ? 180 : 0, {
+      duration: 550,
+      easing: Easing.inOut(Easing.cubic),
+    });
   };
 
   const frontStyle = useAnimatedStyle(() => ({
@@ -109,21 +140,29 @@ export default function Deck() {
         accessibilityRole="button"
         accessibilityLabel={revealed ? "Show question" : "Show answer"}
         onPress={flip}
-        style={styles.cardContainer}
+        style={styles.cardCenter}
       >
-        <Animated.View style={[styles.cardFace, frontStyle]}>
-          <Text style={styles.label}>QUESTION</Text>
-          <Text selectable style={styles.cardText}>
-            {card.front}
-          </Text>
-          <Text style={ui.muted}>Tap to reveal answer</Text>
-        </Animated.View>
-        <Animated.View style={[styles.cardFace, styles.backFace, backStyle]}>
-          <Text style={styles.label}>ANSWER</Text>
-          <Text selectable style={styles.cardText}>
-            {card.back}
-          </Text>
-          <Text style={ui.muted}>Tap to show question</Text>
+        <Animated.View style={[styles.cardBox, boxAnimatedStyle]}>
+          <Animated.View
+            style={[styles.cardFace, styles.frontFace, frontStyle]}
+          >
+            <View onLayout={onFaceLayout("front")} style={styles.faceContent}>
+              <Text style={[styles.label, styles.questionLabel]}>QUESTION</Text>
+              <Text selectable style={styles.cardText}>
+                {card.front}
+              </Text>
+              <Text style={ui.muted}>Tap to reveal answer</Text>
+            </View>
+          </Animated.View>
+          <Animated.View style={[styles.cardFace, styles.backFace, backStyle]}>
+            <View onLayout={onFaceLayout("back")} style={styles.faceContent}>
+              <Text style={[styles.label, styles.answerLabel]}>ANSWER</Text>
+              <Text selectable style={styles.cardText}>
+                {card.back}
+              </Text>
+              <Text style={ui.muted}>Tap to show question</Text>
+            </View>
+          </Animated.View>
         </Animated.View>
       </Pressable>
       <View style={styles.actions}>
@@ -149,7 +188,12 @@ const makeStyles = (palette: Palette) =>
       fontWeight: "800",
       textAlign: "center",
     },
-    cardContainer: { minHeight: 260, position: "relative" },
+    cardCenter: { flex: 1, justifyContent: "center" },
+    // Height is driven by boxAnimatedStyle (smooth morph between cards).
+    // minHeight here is only the pre-measurement floor so the card paints
+    // immediately on platforms that clip overflow of zero-height boxes.
+    cardBox: { position: "relative", width: "100%", minHeight: 200 },
+    faceContent: { gap: 14, width: "100%" },
     cardFace: {
       position: "absolute",
       inset: 0,
@@ -162,19 +206,20 @@ const makeStyles = (palette: Palette) =>
       backfaceVisibility: "hidden",
       justifyContent: "center",
     },
-    backFace: { backgroundColor: palette.primarySoft },
+    backFace: { backgroundColor: palette.successSoft },
+    frontFace: { backgroundColor: palette.primarySoft },
     label: {
-      color: palette.primary,
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 1.5,
     },
+    questionLabel: { color: palette.primary },
+    answerLabel: { color: palette.success },
     cardText: {
       color: palette.ink,
       fontSize: 24,
       lineHeight: 32,
       fontWeight: "700",
-      minHeight: 120,
     },
     actions: { flexDirection: "row", gap: 10 },
   });
