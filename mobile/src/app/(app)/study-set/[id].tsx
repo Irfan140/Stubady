@@ -223,19 +223,8 @@ export default function StudySetDetail() {
                     loading={generateSummary.isPending}
                     onPress={() => {
                       generateSummary.mutate(undefined, {
-                        onSuccess: () => {
-                          Alert.alert(
-                            "Summary ready",
-                            "View the generated summary now?",
-                            [
-                              { text: "Later", style: "cancel" },
-                              {
-                                text: "View",
-                                onPress: () => setSummaryOpen(true),
-                              },
-                            ],
-                          );
-                        },
+                        // No completion alert — the fresh summary appears in
+                        // the preview above with its "Read full summary" link.
                         onError: (error) =>
                           Alert.alert(
                             "Unable to generate summary",
@@ -297,25 +286,9 @@ export default function StudySetDetail() {
                     onSubmit={async (count) => {
                       try {
                         const result = await generateCards.mutateAsync(count);
+                        // No completion alert — the "Review generated
+                        // flashcards" button below appears for the new deck.
                         setGeneratedDeckId(result.deckId);
-                        Alert.alert(
-                          "Deck ready",
-                          "View the generated flashcards now?",
-                          [
-                            { text: "Later", style: "cancel" },
-                            {
-                              text: "Review",
-                              onPress: () =>
-                                router.push({
-                                  pathname: "/deck/[id]",
-                                  params: {
-                                    id: result.deckId,
-                                    studySetId: id,
-                                  },
-                                }),
-                            },
-                          ],
-                        );
                       } catch {
                         /* the mutation error is shown below */
                       }
