@@ -1,6 +1,6 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-import { PROMPT_VERSIONS } from "../config/constants";
+import { PROMPT_VERSIONS } from "../constants/prompts.constants";
 import { chatModel, chatModelId } from "../lib/ai";
 import {
   deleteSummaryForUser,

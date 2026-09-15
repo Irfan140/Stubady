@@ -1,4 +1,7 @@
-import { SOURCE_STATUSES, STALE_PROCESSING_MS } from "../config/constants";
+import {
+  SOURCE_STATUSES,
+  STALE_PROCESSING_MS,
+} from "../constants/sources.constants";
 import { prisma } from "../lib/prisma";
 
 export type SourceType = "pdf" | "note" | "web";

@@ -1,7 +1,7 @@
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 
 import { env } from "../config/env";
-import { PROVIDER_TIMEOUTS } from "../config/constants";
+import { PROVIDER_TIMEOUTS } from "../constants/providers.constants";
 
 const EMBEDDING_MODEL_DIMENSIONS: Record<string, number> = {
   "text-embedding-3-small": 1536,

@@ -1,4 +1,4 @@
-import { CHAT_ROLES } from "../config/constants";
+import { CHAT_ROLES } from "../constants/chat.constants";
 import {
   createConversation as persistConversation,
   deleteConversationForUser,

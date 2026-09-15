@@ -9,11 +9,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import {
-  AI_REQUEST_TIMEOUT_MS,
-  apiRequest,
-  apiStreamRequest,
-} from "@/lib/api/client";
+import { AI_REQUEST_TIMEOUT_MS } from "@/constants/api.constants";
+import { apiRequest, apiStreamRequest } from "@/lib/api/client";
 import {
   chatResultSchema,
   conversationSchema,

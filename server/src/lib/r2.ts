@@ -8,10 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "../config/env";
-
-export const R2_UPLOAD_EXPIRES_SECONDS = 15 * 60;
-export const R2_DOWNLOAD_EXPIRES_SECONDS = 15 * 60;
-export const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
+import { R2_UPLOAD_EXPIRES_SECONDS } from "../constants/storage.constants";
 
 export const r2Config = {
   bucketName: env.r2BucketName,

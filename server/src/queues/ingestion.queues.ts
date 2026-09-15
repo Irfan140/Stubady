@@ -1,7 +1,7 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-import { JOB_NAMES, QUEUE_NAMES } from "../config/constants";
+import { JOB_NAMES, QUEUE_NAMES } from "../constants/queues.constants";
 import { env } from "../config/env";
 
 export type IngestionJobData = {

@@ -3,7 +3,7 @@ import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 import Redis from "ioredis";
 import { RedisStore } from "rate-limit-redis";
 
-import { RATE_LIMITS } from "../config/constants";
+import { RATE_LIMITS } from "../constants/rate-limits.constants";
 import { env } from "../config/env";
 
 /**

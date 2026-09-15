@@ -1,4 +1,5 @@
 import { logger } from "./config/logger";
+import { FORCE_EXIT_MS } from "./constants/shutdown.constants";
 import { prisma } from "./lib/prisma";
 import { closeIngestionQueue } from "./queues/ingestion.queues";
 import { startIngestionWorker } from "./workers/ingestion.workers";
@@ -13,8 +14,6 @@ import { startIngestionWorker } from "./workers/ingestion.workers";
 const ingestionWorker = startIngestionWorker();
 
 logger.info("Ingestion worker started");
-
-const FORCE_EXIT_MS = 10_000;
 
 /**
  * Graceful shutdown: stop taking new jobs, let the in-flight job finish,
