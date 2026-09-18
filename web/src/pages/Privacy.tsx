@@ -67,7 +67,7 @@ export function Privacy() {
                 {SECTIONS.map((s) => (
                   <li key={s.id}>
                     <a
-                      href={`#/privacy`}
+                      href={`#/privacy#${s.id}`}
                       onClick={(e) => {
                         e.preventDefault();
                         document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth" });

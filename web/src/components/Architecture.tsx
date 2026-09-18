@@ -1,3 +1,4 @@
+import archImg from "../assets/stubady_architecture.png";
 import { Reveal } from "./Reveal";
 
 const FLOW = [
@@ -33,57 +34,43 @@ const FLOW = [
   },
 ];
 
-function LayerCard({
-  accent,
-  title,
-  stack,
-  children,
-}: {
-  accent: string;
-  title: string;
-  stack: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex h-full flex-col rounded-2xl border border-line bg-paper p-5 sm:p-6">
-      <p className="flex items-center gap-2.5">
-        <span
-          aria-hidden="true"
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${accent}`}
-        />
-        <span className="text-[15px] font-semibold tracking-tight text-ink">
-          {title}
-        </span>
-      </p>
-      <p className="mt-1 pl-5 text-[12px] font-medium text-faint">{stack}</p>
-      <div className="mt-4 flex-1 border-t border-line-soft pt-4">{children}</div>
-    </div>
-  );
-}
-
-function MiniTitle({ children }: { children: string }) {
-  return (
-    <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">
-      {children}
-    </p>
-  );
-}
-
-function TickList({ items }: { items: string[] }) {
-  return (
-    <ul className="mt-2 space-y-1.5">
-      {items.map((item) => (
-        <li
-          key={item}
-          className="flex gap-2 text-[13.5px] leading-6 text-ink-soft"
-        >
-          <span aria-hidden="true" className="mt-[10px] h-1 w-1 shrink-0 rounded-full bg-brand/50" />
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
+const STACK = [
+  {
+    title: "Mobile app",
+    stack: "Expo SDK 55 · React Native + TypeScript",
+    body: "Study sets, source capture (PDF, notes, web), grounded chat over SSE, summaries, and flashcard decks.",
+  },
+  {
+    title: "Authentication",
+    stack: "Clerk",
+    body: "Email and Google sign-in; every API call verifies the JWT session.",
+  },
+  {
+    title: "Backend API",
+    stack: "Bun + Express",
+    body: "REST plus SSE chat streaming, with auth, rate limits, and validation.",
+  },
+  {
+    title: "Application layer",
+    stack: "Services",
+    body: "Ingestion, chat (RAG with LangGraph), flashcards, summaries, and user data.",
+  },
+  {
+    title: "Data layer",
+    stack: "PostgreSQL + pgvector",
+    body: "Users, sets, sources, and conversations, plus embeddings for semantic search.",
+  },
+  {
+    title: "AI layer",
+    stack: "LangGraph + OpenAI",
+    body: "Retrieval, grounded generation with citations, and streamed replies.",
+  },
+  {
+    title: "Sources + storage",
+    stack: "Firecrawl · Cloudflare R2",
+    body: "Web extraction plus original file storage with metadata.",
+  },
+];
 
 export function Architecture() {
   return (
@@ -106,6 +93,18 @@ export function Architecture() {
             Every layer below maps one-to-one to the system diagram — from
             Clerk auth to BullMQ workers to pgvector search.
           </p>
+        </Reveal>
+
+        {/* Diagram */}
+        <Reveal delay={140}>
+          <figure className="mt-10 overflow-hidden rounded-2xl border border-line bg-night">
+            <img
+              src={archImg}
+              alt="Stubady system architecture — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
+              className="h-auto w-full object-cover"
+              loading="lazy"
+            />
+          </figure>
         </Reveal>
 
         {/* Request flow */}
@@ -135,141 +134,35 @@ export function Architecture() {
           </p>
         </Reveal>
 
-        {/* Layers */}
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Reveal>
-            <LayerCard accent="bg-violet-500" title="Mobile App" stack="Expo SDK 55 · React Native + TypeScript">
-              <MiniTitle>Expo App</MiniTitle>
-              <TickList
-                items={[
-                  "Notes / uploads, chat interface, study material, settings",
-                ]}
-              />
-              <div className="mt-4">
-                <MiniTitle>Source capture</MiniTitle>
-                <TickList
-                  items={[
-                    "Expo Image Picker, PDF / image upload, camera integration",
-                  ]}
-                />
-              </div>
-              <div className="mt-4">
-                <MiniTitle>Result UI</MiniTitle>
-                <TickList
-                  items={["Summaries, AI chat over SSE, study plans, flashcards"]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-
-          <Reveal delay={70}>
-            <LayerCard accent="bg-pink-500" title="Authentication" stack="Clerk">
-              <MiniTitle>Clerk</MiniTitle>
-              <TickList
-                items={[
-                  "Sign in / sign up",
-                  "Email + Google OAuth",
-                  "Session management, user management",
-                  "JWT / session verified by every API call",
-                ]}
-              />
-              <div className="mt-4">
-                <MiniTitle>Backend API</MiniTitle>
-                <TickList
-                  items={[
-                    "Bun + Express · REST /api/v1 + SSE chat streaming",
-                    "Auth, rate-limit, CORS, Zod validation, logging",
-                    "Routes: /auth /notes /sources /chat /documents /study /users /health",
-                  ]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-
-          <Reveal delay={140}>
-            <LayerCard accent="bg-emerald-500" title="Application Layer" stack="Services · business logic">
-              <MiniTitle>Note Service</MiniTitle>
-              <TickList items={["Create · update · delete"]} />
-              <div className="mt-4">
-                <MiniTitle>Ingestion Service</MiniTitle>
-                <TickList items={["Process PDF / web sources, queue jobs"]} />
-              </div>
-              <div className="mt-4">
-                <MiniTitle>Chat Service</MiniTitle>
-                <TickList items={["RAG with LangGraph, SSE streaming"]} />
-              </div>
-              <div className="mt-4">
-                <MiniTitle>Study + User Services</MiniTitle>
-                <TickList
-                  items={[
-                    "Flashcards · summaries · plans · quizzes",
-                    "User data · preferences",
-                  ]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-
-          <Reveal>
-            <LayerCard accent="bg-amber-500" title="Data Layer" stack="PostgreSQL + pgvector">
-              <MiniTitle>PostgreSQL</MiniTitle>
-              <TickList
-                items={[
-                  "Users, notes, documents, conversations, study plans, metadata",
-                ]}
-              />
-              <div className="mt-4">
-                <MiniTitle>pgvector</MiniTitle>
-                <TickList
-                  items={[
-                    "Document embeddings, semantic search, vector similarity",
-                  ]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-
-          <Reveal delay={70}>
-            <LayerCard accent="bg-purple-500" title="AI / RAG Layer" stack="LangGraph + OpenAI">
-              <MiniTitle>LangGraph</MiniTitle>
-              <TickList
-                items={[
-                  "RAG pipeline, tool calling, conversation flow, memory / context",
-                ]}
-              />
-              <div className="mt-4">
-                <MiniTitle>OpenAI</MiniTitle>
-                <TickList
-                  items={[
-                    "GPT models for chat, text-embedding-3 for vectors",
-                    "Grounded generation, structured JSON output",
-                  ]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-
-          <Reveal delay={140}>
-            <LayerCard accent="bg-teal-600" title="Sources + Storage" stack="Firecrawl · Cloudflare R2">
-              <MiniTitle>User sources</MiniTitle>
-              <TickList items={["PDF files, images, typed text / notes"]} />
-              <div className="mt-4">
-                <MiniTitle>Web sources</MiniTitle>
-                <TickList
-                  items={["Firecrawl — crawl + extract the pages you add"]}
-                />
-              </div>
-              <div className="mt-4">
-                <MiniTitle>Cloudflare R2</MiniTitle>
-                <TickList
-                  items={[
-                    "Original PDFs + images, public / private access, file metadata",
-                  ]}
-                />
-              </div>
-            </LayerCard>
-          </Reveal>
-        </div>
+        {/* Full stack, collapsed — the flow above is the story */}
+        <Reveal>
+          <details className="mt-10 rounded-2xl border border-line bg-paper px-6 py-5 sm:px-8">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              For the curious: the full stack
+              <span
+                aria-hidden="true"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-[16px] font-normal text-muted"
+              >
+                +
+              </span>
+            </summary>
+            <dl className="mt-5 grid gap-x-10 gap-y-5 border-t border-line-soft pt-5 md:grid-cols-2">
+              {STACK.map((layer) => (
+                <div key={layer.title}>
+                  <dt className="text-[14px] font-semibold text-ink">
+                    {layer.title}{" "}
+                    <span className="font-normal text-faint">
+                      · {layer.stack}
+                    </span>
+                  </dt>
+                  <dd className="mt-1 text-[13.5px] leading-6 text-muted">
+                    {layer.body}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+        </Reveal>
 
         {/* Async pipeline — wide */}
         <Reveal delay={80}>

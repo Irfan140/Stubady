@@ -3,27 +3,65 @@ import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { DeleteAccount } from "./pages/DeleteAccount";
 import { Home } from "./pages/Home";
+import { NotFound } from "./pages/NotFound";
 import { Privacy } from "./pages/Privacy";
-import { routeFromHash, type Route } from "./router";
+import {
+  isUnknownHash,
+  routeFromHash,
+  scrollToSection,
+  sectionFromHash,
+  type Route,
+} from "./router";
 import "./index.css";
 
-const TITLES: Record<Route, string> = {
+const TITLES: Record<Route | "unknown", string> = {
   home: "Stubady — Study from your own materials",
   privacy: "Privacy policy — Stubady",
   "delete-account": "Delete your account — Stubady",
+  unknown: "Page not found — Stubady",
 };
 
+function initialRoute(): Route | "unknown" {
+  const hash = window.location.hash;
+  if (isUnknownHash(hash)) return "unknown";
+  return routeFromHash(hash);
+}
+
+function applyHash(): Route | "unknown" {
+  const hash = window.location.hash;
+  if (isUnknownHash(hash)) return "unknown";
+  const section = sectionFromHash(hash);
+  if (section) {
+    // Render first, then scroll — the target route mounts on this pass.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!scrollToSection(section)) window.scrollTo({ top: 0 });
+      });
+    });
+  } else {
+    window.scrollTo({ top: 0 });
+  }
+  return routeFromHash(hash);
+}
+
 function App() {
-  const [route, setRoute] = useState<Route>(() => routeFromHash(window.location.hash));
+  const [route, setRoute] = useState<Route | "unknown">(initialRoute);
 
   useEffect(() => {
-    const onHashChange = () => {
-      const next = routeFromHash(window.location.hash);
-      setRoute(next);
-      document.title = TITLES[next];
-      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-    };
-    document.title = TITLES[routeFromHash(window.location.hash)];
+    document.title = TITLES[route];
+  }, [route]);
+
+  useEffect(() => {
+    // Deep links (e.g. #/privacy#collect) scroll after first paint.
+    const section = sectionFromHash(window.location.hash);
+    if (section) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!scrollToSection(section)) window.scrollTo({ top: 0 });
+        });
+      });
+    }
+    const onHashChange = () => setRoute(applyHash());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
@@ -36,12 +74,14 @@ function App() {
       >
         Skip to content
       </a>
-      <SiteHeader route={route} />
+      <SiteHeader route={route === "unknown" ? "home" : route} />
       <div id="content" className="flex-1">
         {route === "privacy" ? (
           <Privacy />
         ) : route === "delete-account" ? (
           <DeleteAccount />
+        ) : route === "unknown" ? (
+          <NotFound />
         ) : (
           <Home />
         )}
