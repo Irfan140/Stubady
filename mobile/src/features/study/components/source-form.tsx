@@ -1,12 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
-import { useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
-import { Button, Card } from "@/components/ui";
-import { useTheme } from "@/stores/theme-store";
-import type { Palette } from "@/theme";
+import { Button, Segmented, TextField, useUiStyles } from "@/components/ui";
 
 const schema = z.discriminatedUnion("type", [
   z.object({
@@ -32,8 +30,7 @@ export function SourceForm({
   onDone: () => void;
   initialType?: Input["type"];
 }) {
-  const { palette } = useTheme();
-  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const ui = useUiStyles();
   const [type, setType] = useState<Input["type"]>(initialType);
   const form = useForm<Input>({
     resolver: zodResolver(schema),
@@ -52,42 +49,40 @@ export function SourceForm({
     }
   };
   return (
-    <Card>
-      <Text style={styles.label}>Add a note or web page</Text>
-      <View style={styles.switcher}>
-        <Button
-          title="Note"
-          variant={type === "note" ? "primary" : "secondary"}
-          onPress={() => {
-            setType("note");
-            form.reset({ type: "note", content: "" });
-          }}
-        />
-        <Button
-          title="Web page"
-          variant={type === "web" ? "primary" : "secondary"}
-          onPress={() => {
-            setType("web");
-            form.reset({ type: "web", url: "" });
-          }}
-        />
-      </View>
+    <View style={styles.container}>
+      <Segmented
+        ariaLabel="Source kind"
+        value={type}
+        onChange={(next) => {
+          setType(next);
+          form.reset(
+            next === "note"
+              ? { type: "note", content: "" }
+              : { type: "web", url: "" },
+          );
+        }}
+        options={[
+          { value: "note", label: "Note" },
+          { value: "web", label: "Web page" },
+        ]}
+      />
       {type === "note" ? (
         <Controller
           control={form.control}
           name="content"
           render={({ field, fieldState }) => (
-            <>
-              <TextInput
-                multiline
-                numberOfLines={4}
-                style={styles.input}
-                placeholder="Paste your notes here"
-                value={field.value ?? ""}
-                onChangeText={field.onChange}
-              />
-              <Text style={styles.error}>{fieldState.error?.message}</Text>
-            </>
+            <TextField
+              label="Your notes"
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              placeholder="Paste your notes here"
+              value={field.value ?? ""}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              editable={!mutation.isPending}
+            />
           )}
         />
       ) : (
@@ -95,17 +90,18 @@ export function SourceForm({
           control={form.control}
           name="url"
           render={({ field, fieldState }) => (
-            <>
-              <TextInput
-                autoCapitalize="none"
-                keyboardType="url"
-                style={styles.input}
-                placeholder="https://example.com/article"
-                value={field.value ?? ""}
-                onChangeText={field.onChange}
-              />
-              <Text style={styles.error}>{fieldState.error?.message}</Text>
-            </>
+            <TextField
+              label="Page URL"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              placeholder="https://example.com/article"
+              value={field.value ?? ""}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              editable={!mutation.isPending}
+            />
           )}
         />
       )}
@@ -115,27 +111,16 @@ export function SourceForm({
             ? "Adding…"
             : `Add ${type === "note" ? "note" : "web page"}`
         }
+        loading={mutation.isPending}
         onPress={form.handleSubmit(submit)}
-        disabled={mutation.isPending}
       />
       {mutation.error ? (
-        <Text style={styles.error}>{mutation.error.message}</Text>
+        <Text style={ui.error}>{mutation.error.message}</Text>
       ) : null}
-    </Card>
+    </View>
   );
 }
-const makeStyles = (palette: Palette) =>
-  StyleSheet.create({
-    label: { color: palette.ink, fontWeight: "700" },
-    switcher: { flexDirection: "row", gap: 8 },
-    input: {
-      minHeight: 100,
-      borderWidth: 1,
-      borderColor: palette.line,
-      borderRadius: 12,
-      padding: 12,
-      textAlignVertical: "top",
-      color: palette.ink,
-    },
-    error: { minHeight: 18, color: palette.danger, fontSize: 12 },
-  });
+
+const styles = StyleSheet.create({
+  container: { gap: 12 },
+});

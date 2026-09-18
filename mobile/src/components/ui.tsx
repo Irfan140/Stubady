@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Image as ExpoImage } from "expo-image";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -12,8 +16,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { hapticLight } from "@/lib/haptics";
+import { hapticLight, hapticSelection } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
 import { radius, shadow, type, type Palette } from "@/theme";
 
@@ -53,11 +58,16 @@ export function ErrorState({
   message: string;
   onRetry?: () => void;
 }) {
-  const { isDark } = useTheme();
+  const { isDark, palette } = useTheme();
   const ui = useUiStyles();
   return (
     <View style={[ui.screen, ui.center]}>
       <StatusBar style={isDark ? "light" : "dark"} />
+      <SymbolView
+        name={{ ios: "exclamationmark.triangle", android: "warning" }}
+        tintColor={palette.danger}
+        size={32}
+      />
       <Text style={ui.error}>{message}</Text>
       {onRetry ? (
         <Button title="Try again" onPress={onRetry} variant="secondary" />
@@ -82,7 +92,7 @@ export function EmptyState({
     <View style={ui.empty}>
       {icon ? <View style={ui.emptyIcon}>{icon}</View> : null}
       <Text style={ui.emptyTitle}>{title}</Text>
-      <Text style={ui.muted}>{message}</Text>
+      <Text style={ui.emptyMessage}>{message}</Text>
       {action ? <View style={ui.emptyAction}>{action}</View> : null}
     </View>
   );
@@ -118,18 +128,13 @@ export function Button({
         styles.button,
         variant === "secondary" && styles.secondaryButton,
         variant === "danger" && styles.dangerButton,
-        variant === "primary" && pressed && !disabled && !loading
-          ? styles.primaryPressed
-          : null,
-        variant !== "primary" && pressed && !disabled && !loading
-          ? styles.ghostPressed
-          : null,
+        pressed && !disabled && !loading && styles.buttonPressed,
         (disabled || loading) && styles.disabled,
       ]}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? palette.onPrimary : palette.ink}
+          color={variant === "primary" ? palette.primaryInk : palette.ink}
         />
       ) : (
         <View style={styles.buttonRow}>
@@ -163,6 +168,18 @@ export function Card({
   return <View style={[ui.card, style]}>{children}</View>;
 }
 
+/** Small pill for counts, types, and citation chips. */
+export function Chip({ label }: { label: string }) {
+  const ui = useUiStyles();
+  return (
+    <View style={ui.chip}>
+      <Text numberOfLines={1} style={ui.chipText}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export function TextField({
   label,
   error,
@@ -170,23 +187,14 @@ export function TextField({
 }: { label: string; error?: string } & React.ComponentProps<typeof TextInput>) {
   const { palette } = useTheme();
   const styles = useUiStyles();
-  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...props}
-        style={[styles.input, focused && styles.inputFocused]}
+        style={styles.input}
         placeholder={props.placeholder ?? label}
         placeholderTextColor={palette.faint}
-        onFocus={(event) => {
-          setFocused(true);
-          props.onFocus?.(event);
-        }}
-        onBlur={(event) => {
-          setFocused(false);
-          props.onBlur?.(event);
-        }}
       />
       <Text style={styles.fieldError}>{error}</Text>
     </View>
@@ -210,37 +218,216 @@ export function Avatar({
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+  const round = { width: size, height: size, borderRadius: size / 2 };
   return imageUrl ? (
-    <View
-      style={[
-        styles.avatar,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
-    >
-      <View
-        style={[
-          styles.avatarImage,
-          { width: size, height: size, borderRadius: size / 2 },
-        ]}
-      >
-        <ExpoImage
-          source={{ uri: imageUrl }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
-        />
-      </View>
+    <View style={[styles.avatar, round]}>
+      <ExpoImage source={{ uri: imageUrl }} style={round} />
     </View>
   ) : (
-    <View
-      style={[
-        styles.avatar,
-        styles.avatarFallback,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
-    >
+    <View style={[styles.avatar, styles.avatarFallback, round]}>
       <Text style={[styles.avatarText, { fontSize: size * 0.34 }]}>
         {initials || "S"}
       </Text>
     </View>
+  );
+}
+
+/**
+ * Consistent pushed-screen header. The Stack gesture stays alive underneath;
+ * this bar only gives every screen the same title row and back target size.
+ */
+export function TopBar({
+  title,
+  action,
+  onBack,
+}: {
+  title: string;
+  action?: ReactNode;
+  onBack?: () => void;
+}) {
+  const { palette } = useTheme();
+  const styles = useUiStyles();
+  return (
+    <View style={styles.topBar}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        hitSlop={8}
+        onPress={() => {
+          hapticSelection();
+          if (onBack) onBack();
+          else router.back();
+        }}
+        style={({ pressed }) => [
+          styles.topBarButton,
+          pressed && styles.topBarButtonPressed,
+        ]}
+      >
+        <SymbolView
+          name={{ ios: "chevron.left", android: "arrow_back" }}
+          tintColor={palette.ink}
+          size={22}
+        />
+      </Pressable>
+      <Text numberOfLines={1} style={styles.topBarTitle}>
+        {title}
+      </Text>
+      <View style={styles.topBarAction}>{action}</View>
+    </View>
+  );
+}
+
+/** Hub segments and any small tab set. Active option is drawn heavier. */
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  ariaLabel: string;
+}) {
+  const styles = useUiStyles();
+  return (
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={ariaLabel}
+      style={styles.segmented}
+    >
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            accessibilityRole="tab"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected }}
+            onPress={() => {
+              if (!selected) {
+                hapticSelection();
+                onChange(option.value);
+              }
+            }}
+            style={({ pressed }) => [
+              styles.segment,
+              selected && styles.segmentSelected,
+              pressed && !selected && styles.segmentPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                selected && styles.segmentTextSelected,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Hairline readiness band. Status reads as a band, never a filled pill. */
+export function ProgressLine({
+  ready,
+  total,
+  caption,
+}: {
+  ready: number;
+  total: number;
+  caption: string;
+}) {
+  const { palette } = useTheme();
+  const styles = useUiStyles();
+  const ratio = total > 0 ? Math.min(1, ready / total) : 0;
+  return (
+    <View style={styles.progressWrap}>
+      <View style={styles.progressTrack}>
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${Math.round(ratio * 100)}%`,
+              backgroundColor:
+                total > 0 && ready < total ? palette.warning : palette.success,
+            },
+          ]}
+        />
+      </View>
+      <Text style={styles.progressCaption}>{caption}</Text>
+    </View>
+  );
+}
+
+/**
+ * Unified bottom sheet: the room darkens, one lit panel rises. Single home
+ * for intake, rename, and overflow menus — replaces the stacked ad-hoc
+ * modals of the old UI.
+ */
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  children,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}) {
+  const { palette } = useTheme();
+  const styles = useUiStyles();
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.sheetBackdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Close ${title}`}
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView behavior="padding" style={styles.sheetKeyboard}>
+          <View
+            style={[
+              styles.sheet,
+              { paddingBottom: Math.max(insets.bottom, 20) },
+            ]}
+          >
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{title}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Close ${title}`}
+                hitSlop={8}
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.sheetClose,
+                  pressed && styles.sheetClosePressed,
+                ]}
+              >
+                <SymbolView
+                  name={{ ios: "xmark", android: "close" }}
+                  tintColor={palette.body}
+                  size={18}
+                />
+              </Pressable>
+            </View>
+            {children}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
   );
 }
 
@@ -281,7 +468,7 @@ const createUiStyles = (palette: Palette) =>
       width: 72,
       height: 72,
       borderRadius: 36,
-      backgroundColor: palette.primarySoft,
+      backgroundColor: palette.pool,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 6,
@@ -292,28 +479,45 @@ const createUiStyles = (palette: Palette) =>
       fontWeight: "800",
       textAlign: "center",
     },
+    emptyMessage: {
+      color: palette.muted,
+      fontSize: type.body.fontSize,
+      lineHeight: type.body.lineHeight,
+      textAlign: "center",
+      paddingHorizontal: 16,
+    },
     emptyAction: { marginTop: 8 },
     card: {
       backgroundColor: palette.surface,
-      borderRadius: radius.xl,
-      padding: 18,
+      borderRadius: radius.lg,
+      padding: 16,
       gap: 10,
       borderWidth: 1,
       borderColor: palette.line,
-      ...shadow.card,
+    },
+    chip: {
+      backgroundColor: palette.primarySoft,
+      borderRadius: radius.pill,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      alignSelf: "flex-start",
+    },
+    chipText: {
+      color: palette.primary,
+      fontSize: 12,
+      fontWeight: "800",
     },
     avatar: {
       overflow: "hidden",
-      backgroundColor: palette.primarySoft,
+      backgroundColor: palette.pool,
       borderWidth: 1,
       borderColor: palette.line,
     },
-    avatarImage: { overflow: "hidden" },
     avatarFallback: { alignItems: "center", justifyContent: "center" },
-    avatarText: { color: palette.primaryDeep, fontWeight: "800" },
+    avatarText: { color: palette.primary, fontWeight: "800" },
     button: {
       minHeight: 52,
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 18,
@@ -327,7 +531,7 @@ const createUiStyles = (palette: Palette) =>
       gap: 8,
     },
     secondaryButton: {
-      backgroundColor: palette.surface,
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: palette.line,
       boxShadow: "none",
@@ -338,14 +542,10 @@ const createUiStyles = (palette: Palette) =>
       borderColor: palette.dangerBorder,
       boxShadow: "none",
     },
-    primaryPressed: {
-      backgroundColor: palette.primaryDeep,
-      transform: [{ scale: 0.97 }],
-    },
-    ghostPressed: { backgroundColor: palette.bg, transform: [{ scale: 0.98 }] },
+    buttonPressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
     disabled: { opacity: 0.5 },
     buttonText: {
-      color: palette.onPrimary,
+      color: palette.primaryInk,
       fontSize: 16,
       fontWeight: "700",
       letterSpacing: -0.2,
@@ -357,7 +557,7 @@ const createUiStyles = (palette: Palette) =>
     field: { gap: 6 },
     label: { color: palette.body, fontSize: 13, fontWeight: "700" },
     input: {
-      borderWidth: 1.5,
+      borderWidth: 1,
       borderColor: palette.line,
       borderRadius: radius.md,
       minHeight: 52,
@@ -366,9 +566,106 @@ const createUiStyles = (palette: Palette) =>
       fontSize: 16,
       backgroundColor: palette.inputBg,
     },
-    inputFocused: {
-      borderColor: palette.primary,
-      backgroundColor: palette.surface,
-    },
     fieldError: { minHeight: 18, color: palette.danger, fontSize: 12 },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      minHeight: 48,
+    },
+    topBarButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    topBarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+    topBarTitle: {
+      flex: 1,
+      color: palette.ink,
+      fontSize: 17,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    topBarAction: {
+      width: 44,
+      alignItems: "flex-end",
+      justifyContent: "center",
+    },
+    segmented: {
+      flexDirection: "row",
+      gap: 4,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: radius.lg,
+      padding: 4,
+    },
+    segment: {
+      flex: 1,
+      minHeight: 44,
+      borderRadius: radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 6,
+    },
+    segmentSelected: { backgroundColor: palette.primarySoft },
+    segmentPressed: { backgroundColor: palette.pool },
+    segmentText: { color: palette.muted, fontSize: 13, fontWeight: "600" },
+    segmentTextSelected: { color: palette.primary, fontWeight: "800" },
+    progressWrap: { gap: 6 },
+    progressTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: palette.line,
+      overflow: "hidden",
+    },
+    progressFill: { height: 4, borderRadius: 2 },
+    progressCaption: { color: palette.muted, fontSize: 13, lineHeight: 18 },
+    sheetBackdrop: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(4, 6, 14, 0.6)",
+    },
+    sheetKeyboard: { justifyContent: "flex-end" },
+    sheet: {
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      backgroundColor: palette.surface,
+      ...shadow.raised,
+    },
+    sheetHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: palette.line,
+      alignSelf: "center",
+    },
+    sheetHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    sheetTitle: {
+      flex: 1,
+      color: palette.ink,
+      fontSize: 19,
+      fontWeight: "800",
+    },
+    sheetClose: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.pool,
+    },
+    sheetClosePressed: { opacity: 0.7 },
   });

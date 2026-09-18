@@ -1,13 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stack, router } from "expo-router";
-import { SymbolView } from "expo-symbols";
+import { router } from "expo-router";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { Button, Card, TextField, useUiStyles } from "@/components/ui";
+import { Button, Card, TextField, TopBar, useUiStyles } from "@/components/ui";
 import { useCreateStudySet } from "@/features/study/api";
 import { useTheme } from "@/stores/theme-store";
 import type { Palette } from "@/theme";
@@ -40,7 +38,7 @@ export default function NewStudySet() {
     try {
       const result = await create.mutateAsync(title);
       router.replace({
-        pathname: "/study-set/[id]",
+        pathname: "/(app)/study-set/[id]",
         params: { id: result.id },
       });
     } catch {
@@ -52,7 +50,6 @@ export default function NewStudySet() {
       style={ui.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -64,30 +61,8 @@ export default function NewStudySet() {
           },
         ]}
       >
-        <View style={styles.navBar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={12}
-            onPress={() => router.back()}
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <SymbolView
-              name={{ ios: "chevron.left", android: "arrow_back" }}
-              tintColor={palette.ink}
-              size={22}
-            />
-          </Pressable>
-          <Text numberOfLines={1} style={styles.navTitle}>
-            New study set
-          </Text>
-          <View style={styles.navSpacer} />
-        </View>
+        <TopBar title="New study set" />
         <View style={styles.hero}>
-          <Text style={styles.eyebrow}>NEW SET</Text>
           <Text style={styles.title}>What are you learning?</Text>
           <Text style={ui.muted}>
             Give this collection a clear name so it is easy to find later.
@@ -144,26 +119,7 @@ export default function NewStudySet() {
 }
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
-    navBar: { flexDirection: "row", alignItems: "center", gap: 8 },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: palette.surface,
-      borderWidth: 1,
-      borderColor: palette.line,
-    },
-    navTitle: { flex: 1, color: palette.ink, fontSize: 17, fontWeight: "700" },
-    navSpacer: { width: 40 },
     hero: { gap: 6 },
-    eyebrow: {
-      color: palette.primary,
-      fontSize: 11,
-      fontWeight: "800",
-      letterSpacing: 1.3,
-    },
     title: { color: palette.ink, fontSize: 28, fontWeight: "800" },
     error: { minHeight: 18, color: palette.danger, fontSize: 13 },
     overlay: {
@@ -179,7 +135,7 @@ const makeStyles = (palette: Palette) =>
       alignItems: "center",
       gap: 8,
       backgroundColor: palette.surface,
-      borderRadius: 22,
+      borderRadius: 16,
       paddingHorizontal: 24,
       paddingVertical: 28,
     },
@@ -189,5 +145,4 @@ const makeStyles = (palette: Palette) =>
       fontSize: 14,
       textAlign: "center",
     },
-    pressed: { opacity: 0.85 },
   });

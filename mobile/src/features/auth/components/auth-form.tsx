@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import { radius, shadow, type } from "@/theme";
+import { radius, type } from "@/theme";
 import type { Palette } from "@/theme";
 import {
   credentialsSchema,
@@ -157,17 +157,12 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         ]}
       >
         <View style={styles.header}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoBadge}>
-              <Image
-                source={require("@/assets/images/icon.png")}
-                style={styles.logo}
-                contentFit="contain"
-              />
-            </View>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>AI STUDY COPILOT</Text>
-            </View>
+          <View style={styles.logoBadge}>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={styles.logo}
+              contentFit="contain"
+            />
           </View>
           <Text style={styles.title}>
             {isSignUp ? "Start learning smarter." : "Welcome back."}
@@ -325,7 +320,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           </>
         )}
         <Text style={styles.switch}>
-          {isSignUp ? "Already have an account? " : "New to Studbady? "}
+          {isSignUp ? "Already have an account? " : "New to Stubady? "}
           <Link
             href={isSignUp ? "/(auth)/sign-in" : "/(auth)/sign-up"}
             style={styles.link}
@@ -351,32 +346,18 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
     content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 20 },
-    header: { gap: 10 },
-    brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    header: { gap: 12 },
     logoBadge: {
-      width: 52,
-      height: 52,
+      width: 56,
+      height: 56,
       borderRadius: 16,
       backgroundColor: palette.surface,
       borderWidth: 1,
       borderColor: palette.line,
       alignItems: "center",
       justifyContent: "center",
-      ...shadow.card,
     },
-    logo: { width: 34, height: 34, borderRadius: 10 },
-    pill: {
-      backgroundColor: palette.primarySoft,
-      borderRadius: radius.pill,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-    },
-    pillText: {
-      color: palette.primaryDeep,
-      fontSize: 11,
-      fontWeight: "800",
-      letterSpacing: 1.4,
-    },
+    logo: { width: 36, height: 36, borderRadius: 10 },
     title: {
       color: palette.ink,
       fontSize: type.display.fontSize,
@@ -388,26 +369,16 @@ const makeStyles = (palette: Palette) =>
       fontSize: type.body.fontSize,
       lineHeight: type.body.lineHeight,
     },
-    highlights: {
-      gap: 8,
-      marginTop: 4,
-      backgroundColor: palette.surface,
-      borderWidth: 1,
-      borderColor: palette.line,
-      borderRadius: radius.lg,
-      padding: 14,
-      ...shadow.card,
-    },
+    highlights: { gap: 10, marginTop: 4 },
     highlightRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     highlightText: { color: palette.body, fontSize: 14, fontWeight: "600" },
     card: {
       backgroundColor: palette.surface,
-      borderRadius: radius.xl,
+      borderRadius: radius.lg,
       padding: 18,
       gap: 12,
       borderWidth: 1,
       borderColor: palette.line,
-      ...shadow.card,
     },
     cardTitle: {
       color: palette.ink,
@@ -417,7 +388,7 @@ const makeStyles = (palette: Palette) =>
     passwordWrap: {
       flexDirection: "row",
       alignItems: "center",
-      borderWidth: 1.5,
+      borderWidth: 1,
       borderColor: palette.line,
       borderRadius: radius.md,
       backgroundColor: palette.inputBg,

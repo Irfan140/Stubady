@@ -14,7 +14,7 @@ import {
 
 import { hapticError, hapticLight, hapticSuccess } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import { radius, shadow } from "@/theme";
+import { radius } from "@/theme";
 import type { Palette } from "@/theme";
 
 export function GoogleSignInButton({
@@ -109,7 +109,6 @@ const makeStyles = (palette: Palette) =>
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: palette.surface,
-      ...shadow.card,
     },
     pressed: { transform: [{ scale: 0.98 }], borderColor: palette.primary },
     buttonContent: {

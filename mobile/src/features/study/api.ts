@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/expo";
 import {
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type InfiniteData,
@@ -445,6 +446,137 @@ export function useMessages(conversationId: string) {
     items: (query.data?.pages.flatMap((item) => item.data) ?? []).sort(
       (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
     ),
+  };
+}
+
+export type ActivityItem = {
+  key: string;
+  kind: "chat" | "deck" | "summary";
+  setId: string;
+  setTitle: string;
+  title: string;
+  detail: string;
+  date: Date | null;
+  targetId: string;
+};
+
+/**
+ * Global activity feed across sets, merged from the existing per-set list
+ * endpoints (first page each). Read-only composition — no new backend.
+ */
+export function useSetsActivity(sets: { id: string; title: string }[]) {
+  const { getToken } = useAuth();
+  const conversationQueries = useQueries({
+    queries: sets.map((set) => ({
+      queryKey: [...keys.conversations(set.id), "activity"] as const,
+      queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+        page(conversationSchema).parse(
+          await apiRequest<Page<unknown>>(
+            getToken,
+            `/conversations?studySetId=${encodeURIComponent(set.id)}`,
+            { signal },
+          ),
+        ),
+      staleTime: 30_000,
+    })),
+  });
+  const deckQueries = useQueries({
+    queries: sets.map((set) => ({
+      queryKey: [...keys.decks(set.id), "activity"] as const,
+      queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+        page(deckSchema).parse(
+          await apiRequest<Page<unknown>>(
+            getToken,
+            `/study-sets/${set.id}/decks`,
+            { signal },
+          ),
+        ),
+      staleTime: 30_000,
+    })),
+  });
+  const summaryQueries = useQueries({
+    queries: sets.map((set) => ({
+      queryKey: [...keys.summaries(set.id), "activity"] as const,
+      queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+        page(summarySchema).parse(
+          await apiRequest<Page<unknown>>(
+            getToken,
+            `/study-sets/${set.id}/summaries`,
+            { signal },
+          ),
+        ),
+      staleTime: 30_000,
+    })),
+  });
+  const all = [...conversationQueries, ...deckQueries, ...summaryQueries];
+  const refetch = () => {
+    void Promise.all(all.map((q) => q.refetch()));
+  };
+  if (all.some((q) => q.isPending)) {
+    return {
+      isPending: true as boolean,
+      isError: false as boolean,
+      error: undefined,
+      items: [] as ActivityItem[],
+      refetch,
+    };
+  }
+  const failed = all.find((q) => q.isError);
+  if (failed) {
+    return {
+      isPending: false as boolean,
+      isError: true as boolean,
+      error: failed.error as Error,
+      items: [] as ActivityItem[],
+      refetch,
+    };
+  }
+  const items: ActivityItem[] = [];
+  sets.forEach((set, setIndex) => {
+    for (const c of conversationQueries[setIndex]?.data?.data ?? [])
+      items.push({
+        key: `chat-${c.id}`,
+        kind: "chat",
+        setId: set.id,
+        setTitle: set.title,
+        title: "Study chat",
+        detail: "Asked about this set's material",
+        date: c.updatedAt ?? c.createdAt ?? null,
+        targetId: c.id,
+      });
+    for (const d of deckQueries[setIndex]?.data?.data ?? [])
+      items.push({
+        key: `deck-${d.id}`,
+        kind: "deck",
+        setId: set.id,
+        setTitle: set.title,
+        title: d.title,
+        detail: `${d.cardCount} ${d.cardCount === 1 ? "card" : "cards"}`,
+        date: d.createdAt ?? null,
+        targetId: d.id,
+      });
+    for (const s of summaryQueries[setIndex]?.data?.data ?? [])
+      items.push({
+        key: `summary-${s.id}`,
+        kind: "summary",
+        setId: set.id,
+        setTitle: set.title,
+        title: "Summary",
+        detail: s.content
+          .replace(/^#{1,6}\s*/gm, "")
+          .slice(0, 90)
+          .trim(),
+        date: s.createdAt ?? null,
+        targetId: s.id,
+      });
+  });
+  items.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+  return {
+    isPending: false as boolean,
+    isError: false as boolean,
+    error: undefined,
+    items,
+    refetch,
   };
 }
 

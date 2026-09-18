@@ -1,12 +1,11 @@
 import { useUser } from "@clerk/expo";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { Link, router } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -15,197 +14,319 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Avatar,
+  Button,
+  Card,
+  Chip,
   EmptyState,
   ErrorState,
   LoadingState,
+  ProgressLine,
+  Screen,
   useUiStyles,
 } from "@/components/ui";
-import { useStudySets } from "@/features/study/api";
-import { StudySetCard } from "@/features/study/components/study-set-card";
-import { hapticLight, hapticMedium } from "@/lib/haptics";
+import {
+  useConversations,
+  useDecks,
+  useSources,
+  useStudySets,
+  useSummaries,
+} from "@/features/study/api";
+import { hapticMedium } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import { radius, shadow, type, type Palette } from "@/theme";
+import { type, radius, type Palette } from "@/theme";
 
-export default function StudySetsScreen() {
-  const { isDark, palette } = useTheme();
+export default function StudyHome() {
+  const { palette } = useTheme();
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const query = useStudySets();
-  const { user } = useUser();
   const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
-  if (query.isPending)
-    return <LoadingState label="Loading your study sets..." />;
-  if (query.isError)
+  const { user } = useUser();
+  const setsQuery = useStudySets();
+
+  if (setsQuery.isPending) return <LoadingState label="Lighting your desk…" />;
+  if (setsQuery.isError)
     return (
       <ErrorState
-        message={query.error.message}
+        message={setsQuery.error.message}
         onRetry={() => {
-          hapticLight();
-          void query.refetch();
+          void setsQuery.refetch();
         }}
       />
     );
-  const sets = query.items;
+
+  const sets = [...setsQuery.items].sort(
+    (a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0),
+  );
+  const current = sets[0];
   const firstName = user?.firstName ?? "there";
-  const refresh = async () => {
-    setRefreshing(true);
-    await query.refetch();
-    setRefreshing(false);
-  };
+
   return (
-    <View style={ui.screen}>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <FlatList
+    <Screen>
+      <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={ui.screen}
         contentContainerStyle={[
           ui.content,
           {
-            paddingTop: Math.max(insets.top, 16) + 8,
-            // Clear floating tab bar (68 + bottom margin) plus FAB overlay.
-            paddingBottom: Math.max(insets.bottom, 12) + 160,
-            flexGrow: sets.length === 0 ? 1 : undefined,
+            paddingTop: Math.max(insets.top, 16) + 4,
+            paddingBottom: 24,
           },
         ]}
-        data={sets}
-        keyExtractor={(item) => item.id}
-        onEndReached={() => {
-          if (query.hasNextPage && !query.isFetchingNextPage)
-            void query.fetchNextPage();
-        }}
-        onEndReachedThreshold={0.4}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={false}
             tintColor={palette.primary}
             onRefresh={() => {
-              void refresh();
+              void setsQuery.refetch();
             }}
           />
         }
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.greetingRow}>
-              <View style={styles.greetingCopy}>
-                <Text style={styles.title}>Hey {firstName} 👋</Text>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open settings"
-                accessibilityHint="Go to your account settings"
-                hitSlop={12}
-                onPress={() => {
-                  hapticLight();
-                  router.push("/(app)/(tabs)/settings");
-                }}
-                style={({ pressed }) => [
-                  styles.avatarButton,
-                  pressed && styles.avatarButtonPressed,
-                ]}
-              >
-                <Avatar
-                  imageUrl={user?.imageUrl}
-                  name={user?.fullName}
-                  size={48}
-                />
-              </Pressable>
-            </View>
+      >
+        <View style={styles.header}>
+          <View style={styles.greeting}>
+            <Text style={styles.title}>Good to see you, {firstName}</Text>
+            <Text style={styles.subtitle}>
+              {current
+                ? "Your desk is set. Pick up where you left off."
+                : "Let's build your first revision space."}
+            </Text>
           </View>
-        }
-        ListEmptyComponent={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            hitSlop={8}
+            onPress={() => router.push("/(app)/settings")}
+            style={({ pressed }) => [
+              styles.avatarButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Avatar imageUrl={user?.imageUrl} name={user?.fullName} size={44} />
+          </Pressable>
+        </View>
+
+        {current ? (
+          <ContinuePanel setId={current.id} title={current.title} />
+        ) : (
           <EmptyState
             icon={
               <SymbolView
-                name={{ ios: "books.vertical", android: "library_books" }}
+                name={{ ios: "book", android: "auto_stories" }}
                 tintColor={palette.primary}
-                size={32}
+                size={30}
               />
             }
-            title="Your library is ready"
-            message="Create a study set, add notes or web pages, and Studbady will build your revision tools."
+            title="Your desk is empty"
+            message="Create a study set for a subject, add your PDFs or notes, and Stubady turns them into chats, summaries, and flashcards."
             action={
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Create your first study set"
+              <Button
+                title="Create your first set"
                 onPress={() => {
                   hapticMedium();
-                  router.push("/new-study-set");
+                  router.push("/(app)/new-study-set");
                 }}
-                style={({ pressed }) => [
-                  styles.emptyCta,
-                  pressed && styles.emptyCtaPressed,
-                ]}
-              >
-                <Text style={styles.emptyCtaText}>Create your first set</Text>
-              </Pressable>
+              />
             }
           />
+        )}
+
+        <Card>
+          <Text style={styles.cardTitle}>Capture material</Text>
+          <Text style={styles.cardBody}>
+            Drop in the latest reading and it processes in the background.
+          </Text>
+          <View style={styles.captureRow}>
+            <View style={styles.captureFlex}>
+              <Button
+                title="New set"
+                variant="secondary"
+                onPress={() => router.push("/(app)/new-study-set")}
+              />
+            </View>
+            {current ? (
+              <View style={styles.captureFlex}>
+                <Button
+                  title={`Add to ${truncate(current.title)}`}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(app)/study-set/[id]",
+                      params: { id: current.id, addSource: "1" },
+                    })
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
+        </Card>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+function truncate(title: string, max = 18) {
+  return title.length > max ? `${title.slice(0, max - 1)}…` : title;
+}
+
+/**
+ * The lit pool: current set, its readiness, and the single Continue action.
+ * Recency ranks; readiness rides along as the secondary line.
+ */
+function ContinuePanel({ setId, title }: { setId: string; title: string }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const sources = useSources(setId);
+  const conversations = useConversations(setId);
+  const decks = useDecks(setId);
+  const summaries = useSummaries(setId);
+
+  const total = sources.items.length;
+  const ready = sources.items.filter((s) => s.status === "ready").length;
+  const stuck = sources.items.filter((s) => s.status === "failed").length;
+  const latestChat = conversations.items[0];
+  const latestDeck = decks.items[0];
+  const latestSummary = summaries.items[0];
+
+  const resumeTarget = latestChat
+    ? {
+        pathname: "/(app)/chat/[id]" as const,
+        params: { id: latestChat.id, studySetId: setId },
+        label: "Resume chat",
+      }
+    : latestDeck
+      ? {
+          pathname: "/(app)/deck/[id]" as const,
+          params: { id: latestDeck.id, studySetId: setId },
+          label: "Review deck",
         }
-        renderItem={({ item }) => <StudySetCard item={item} />}
-      />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Create a new study set"
-        onPress={() => {
-          hapticMedium();
-          router.push("/new-study-set");
-        }}
-        style={({ pressed }) => [
-          styles.fab,
-          // Sit above the floating tab bar (68pt + bottom margin) with a gap.
-          { bottom: Math.max(insets.bottom, 12) + 80 },
-          pressed && styles.fabPressed,
-        ]}
-      >
-        <SymbolView
-          name={{ ios: "plus", android: "add" }}
-          tintColor={palette.onPrimary}
-          size={26}
+      : null;
+
+  return (
+    <View style={styles.pool}>
+      <View style={styles.poolHeader}>
+        <Text style={styles.poolTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        <Link
+          href={{ pathname: "/(app)/study-set/[id]", params: { id: setId } }}
+          asChild
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${title}`}
+          >
+            <Text style={styles.poolLink}>Open set ›</Text>
+          </Pressable>
+        </Link>
+      </View>
+
+      {total > 0 ? (
+        <ProgressLine
+          ready={ready}
+          total={total}
+          caption={
+            stuck > 0
+              ? `${ready} of ${total} ready · ${stuck} need${stuck === 1 ? "s" : ""} attention`
+              : ready === total
+                ? `${total} ${total === 1 ? "source" : "sources"} ready — study tools are live`
+                : `${ready} of ${total} ready — processing the rest`
+          }
         />
-      </Pressable>
+      ) : (
+        <Text style={styles.poolNote}>
+          No sources yet — add one to light up study tools.
+        </Text>
+      )}
+
+      <Button
+        title="Continue studying"
+        onPress={() =>
+          router.push({
+            pathname: "/(app)/study-set/[id]",
+            params: { id: setId },
+          })
+        }
+      />
+
+      {resumeTarget || latestSummary ? (
+        <View style={styles.resumeRow}>
+          {resumeTarget ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={resumeTarget.label}
+              onPress={() => router.push(resumeTarget)}
+              style={({ pressed }) => [
+                styles.resumeChip,
+                pressed && styles.pressed,
+              ]}
+            >
+              <SymbolView
+                name={
+                  latestChat
+                    ? { ios: "bubble.left", android: "chat_bubble" }
+                    : { ios: "square.stack.3d.up", android: "style" }
+                }
+                tintColor={palette.primary}
+                size={16}
+              />
+              <Text style={styles.resumeText}>{resumeTarget.label}</Text>
+            </Pressable>
+          ) : null}
+          {latestSummary ? <Chip label="Summary ready" /> : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
-    header: { marginBottom: 4 },
-    greetingRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    greetingCopy: { flex: 1, justifyContent: "center" },
-    avatarButton: { borderRadius: 24 },
-    avatarButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+    header: { flexDirection: "row", alignItems: "center", gap: 12 },
+    greeting: { flex: 1, gap: 4 },
     title: {
       color: palette.ink,
       fontSize: type.title.fontSize,
       fontWeight: "800",
       letterSpacing: type.title.letterSpacing,
     },
-    fab: {
-      position: "absolute",
-      right: 20,
-      width: 56,
-      height: 56,
-      borderRadius: radius.pill,
+    subtitle: { color: palette.muted, fontSize: 15, lineHeight: 21 },
+    avatarButton: { borderRadius: 22 },
+    pressed: { opacity: 0.7, transform: [{ scale: 0.96 }] },
+    pool: {
+      gap: 12,
+      backgroundColor: palette.surface,
+      borderRadius: radius.xl,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderTopWidth: 3,
+      borderTopColor: palette.primary,
+    },
+    poolHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    poolTitle: {
+      flex: 1,
+      color: palette.ink,
+      fontSize: type.h2.fontSize,
+      fontWeight: "800",
+    },
+    poolLink: { color: palette.primary, fontWeight: "700", fontSize: 14 },
+    poolNote: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    resumeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    resumeChip: {
+      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: palette.primary,
-      ...shadow.raised,
-    },
-    fabPressed: {
-      backgroundColor: palette.primaryDeep,
-      transform: [{ scale: 0.96 }],
-    },
-    emptyCta: {
-      backgroundColor: palette.primary,
+      gap: 6,
+      minHeight: 44,
+      paddingHorizontal: 14,
       borderRadius: radius.pill,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
+      backgroundColor: palette.primarySoft,
     },
-    emptyCtaPressed: { backgroundColor: palette.primaryDeep },
-    emptyCtaText: { color: palette.onPrimary, fontSize: 14, fontWeight: "800" },
+    resumeText: { color: palette.primary, fontSize: 14, fontWeight: "800" },
+    cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+    cardBody: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    captureRow: { flexDirection: "row", gap: 10 },
+    captureFlex: { flex: 1 },
   });

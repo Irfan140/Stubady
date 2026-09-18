@@ -1,39 +1,26 @@
 import { Tabs } from "expo-router";
-
 import { SymbolView } from "expo-symbols";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { hapticSelection } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import { radius, shadow } from "@/theme";
 
+/**
+ * Platform-standard bottom tabs: three task destinations, nothing custom.
+ * Settings moved out — the account avatar opens it from Study and Library.
+ */
 export default function TabsLayout() {
   const { palette } = useTheme();
-  const insets = useSafeAreaInsets();
-  // Floating rounded bar — bottom margin respects the system gesture area
-  // so content and OS buttons are never covered. Pure JS style, OTA-safe.
-  const tabBottom = Math.max(insets.bottom, 12);
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: palette.primary,
         tabBarInactiveTintColor: palette.faint,
-        headerShown: false,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
         tabBarStyle: {
-          position: "absolute",
-          left: 40,
-          right: 40,
-          bottom: tabBottom,
-          height: 68,
-          borderRadius: radius.pill,
           backgroundColor: palette.surface,
-          borderWidth: 1,
-          borderColor: palette.line,
           borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 10,
-          ...shadow.card,
+          borderTopColor: palette.line,
         },
       }}
       screenListeners={{
@@ -45,8 +32,22 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Study sets",
-          tabBarLabel: "Study sets",
+          title: "Study",
+          tabBarLabel: "Study",
+          tabBarIcon: ({ color, size }) => (
+            <SymbolView
+              name={{ android: "auto_stories", ios: "book" }}
+              tintColor={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: "Library",
+          tabBarLabel: "Library",
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{ android: "library_books", ios: "books.vertical" }}
@@ -57,13 +58,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="activity"
         options={{
-          title: "Settings",
-          tabBarLabel: "Settings",
+          title: "Activity",
+          tabBarLabel: "Activity",
           tabBarIcon: ({ color, size }) => (
             <SymbolView
-              name={{ android: "settings", ios: "gearshape" }}
+              name={{ android: "history", ios: "clock" }}
               tintColor={color}
               size={size}
             />
