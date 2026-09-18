@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MarkdownText } from "@/components/markdown-text";
 import { useTheme } from "@/stores/theme-store";
-import type { Palette } from "@/theme";
+import { shadow, type Palette } from "@/theme";
 
 export function getSummaryPreview(content: string) {
   return content
@@ -60,13 +60,13 @@ export function SummaryReaderModal({
           ]}
         >
           <View style={styles.header}>
-            <View style={styles.heading}>
-              <Text style={styles.eyebrow}>STUDY SUMMARY</Text>
-              <Text style={styles.title}>{title}</Text>
-            </View>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Close summary"
+              hitSlop={8}
               onPress={onClose}
               style={styles.close}
             >
@@ -100,34 +100,27 @@ const makeStyles = (palette: Palette) =>
     },
     card: {
       maxHeight: "88%",
-      borderRadius: 26,
+      borderRadius: 16,
       overflow: "hidden",
       backgroundColor: palette.surface,
-      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.22)",
+      ...shadow.raised,
     },
     header: {
       flexDirection: "row",
-      alignItems: "flex-start",
+      alignItems: "center",
       gap: 12,
       padding: 20,
       borderBottomWidth: 1,
       borderBottomColor: palette.line,
     },
-    heading: { flex: 1, gap: 4 },
-    eyebrow: {
-      color: palette.primary,
-      fontSize: 11,
-      fontWeight: "800",
-      letterSpacing: 1.3,
-    },
-    title: { color: palette.ink, fontSize: 21, fontWeight: "800" },
+    title: { flex: 1, color: palette.ink, fontSize: 19, fontWeight: "800" },
     close: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: palette.bg,
+      backgroundColor: palette.pool,
     },
     closeText: {
       color: palette.body,

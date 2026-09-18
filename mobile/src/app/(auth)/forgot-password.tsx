@@ -19,7 +19,7 @@ import { z } from "zod";
 import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import { radius, shadow, type } from "@/theme";
+import { radius, type } from "@/theme";
 import type { Palette } from "@/theme";
 
 const emailSchema = z.object({ email: z.email("Enter a valid email address") });
@@ -303,7 +303,6 @@ const makeStyles = (palette: Palette) =>
       borderColor: palette.line,
       borderRadius: radius.lg,
       padding: 12,
-      ...shadow.card,
     },
     step: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
     stepDot: {
@@ -335,12 +334,11 @@ const makeStyles = (palette: Palette) =>
     stepLabelActive: { color: palette.ink },
     card: {
       backgroundColor: palette.surface,
-      borderRadius: radius.xl,
+      borderRadius: radius.lg,
       padding: 18,
       gap: 12,
       borderWidth: 1,
       borderColor: palette.line,
-      ...shadow.card,
     },
     errorBanner: {
       backgroundColor: palette.dangerSoft,

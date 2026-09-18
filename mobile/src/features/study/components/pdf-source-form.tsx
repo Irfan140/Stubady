@@ -8,7 +8,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MAX_PDF_SIZE_BYTES } from "@/constants/uploads.constants";
 import {
@@ -18,6 +17,7 @@ import {
 import { useTheme } from "@/stores/theme-store";
 import type { Palette } from "@/theme";
 import { useCompletePdfUpload, useCreatePdfUpload } from "../api";
+import { Button } from "@/components/ui";
 
 type UploadStatus =
   "picking" | "preparing" | "uploading" | "processing" | "error";
@@ -45,7 +45,6 @@ export function PdfSourceForm({
   const completeUpload = useCompletePdfUpload(studySetId);
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const insets = useSafeAreaInsets();
   const started = useRef(false);
   const abortUpload = useRef<AbortController | null>(null);
   const [status, setStatus] = useState<UploadStatus | null>(null);
@@ -125,92 +124,88 @@ export function PdfSourceForm({
     }
   }, [autoOpen, selectAndUpload]);
 
-  if (status === null) return null;
+  if (status === null) {
+    return (
+      <View style={styles.idle}>
+        <Button title="Choose PDF" onPress={() => void selectAndUpload()} />
+      </View>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <View style={styles.errorCard}>
+        <Text style={styles.errorText} selectable>
+          {error}
+        </Text>
+        <View style={styles.errorActions}>
+          <View style={styles.errorFlex}>
+            <Button
+              title="Try again"
+              variant="secondary"
+              onPress={() => void selectAndUpload()}
+            />
+          </View>
+          <View style={styles.errorFlex}>
+            <Button title="Close" variant="secondary" onPress={onClose} />
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View
-      pointerEvents="box-none"
-      style={[styles.overlay, { bottom: Math.max(insets.bottom, 16) + 8 }]}
-    >
-      <View style={[styles.card, status === "error" && styles.cardError]}>
-        {status === "error" ? (
-          <>
-            <Text style={styles.errorText} selectable>
-              {error}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss upload error"
-              onPress={onClose}
-              style={styles.dismiss}
-            >
-              <Text style={styles.dismissText}>Close</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <ActivityIndicator color={palette.primary} size="small" />
-            <Text style={styles.statusText}>
-              {STATUS_LABEL[status]}
-              {status === "uploading" && progress != null
-                ? ` ${Math.round(progress * 100)}%`
-                : ""}
-            </Text>
-            {status === "uploading" ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cancel upload"
-                onPress={() => abortUpload.current?.abort()}
-                style={styles.cancel}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </Pressable>
-            ) : null}
-          </>
-        )}
-      </View>
+    <View style={styles.progress}>
+      <ActivityIndicator color={palette.primary} size="small" />
+      <Text style={styles.statusText}>
+        {STATUS_LABEL[status]}
+        {status === "uploading" && progress != null
+          ? ` ${Math.round(progress * 100)}%`
+          : ""}
+      </Text>
+      {status === "uploading" ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Cancel upload"
+          hitSlop={8}
+          onPress={() => abortUpload.current?.abort()}
+          style={styles.cancel}
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
-    overlay: {
-      position: "absolute",
-      left: 16,
-      right: 16,
-      alignItems: "center",
-    },
-    card: {
-      width: "100%",
-      maxWidth: 480,
+    idle: { gap: 8 },
+    progress: {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
-      backgroundColor: palette.surface,
-      borderRadius: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.35)",
+      minHeight: 56,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      backgroundColor: palette.pool,
     },
-    cardError: { backgroundColor: "#7F1D1D" },
     statusText: {
       color: palette.ink,
       fontSize: 14,
       fontWeight: "600",
       flexShrink: 1,
+      flex: 1,
     },
     cancel: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 10,
+      minHeight: 44,
+      justifyContent: "center",
     },
     cancelText: { color: palette.muted, fontSize: 13, fontWeight: "700" },
-    errorText: { color: "#FECACA", fontSize: 13, lineHeight: 18, flex: 1 },
-    dismiss: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: "rgba(255, 255, 255, 0.16)",
-    },
-    dismissText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+    errorCard: { gap: 10 },
+    errorText: { color: palette.danger, fontSize: 14, lineHeight: 20 },
+    errorActions: { flexDirection: "row", gap: 8 },
+    errorFlex: { flex: 1 },
   });

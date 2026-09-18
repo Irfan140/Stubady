@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch, type Control } from "react-hook-form";
@@ -20,8 +20,19 @@ import {
 } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { ErrorState, LoadingState, useUiStyles } from "@/components/ui";
-import { useMessages, useSendMessage } from "@/features/study/api";
+import {
+  Chip,
+  ErrorState,
+  LoadingState,
+  TopBar,
+  useUiStyles,
+} from "@/components/ui";
+import {
+  useMessages,
+  useSendMessage,
+  useSources,
+  useStudySet,
+} from "@/features/study/api";
 import type { Message } from "@/features/study/types";
 import { hapticLight } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
@@ -30,6 +41,15 @@ import { radius, shadow, type Palette } from "@/theme";
 const schema = z.object({
   message: z.string().trim().min(1, "Ask a question"),
 });
+
+type ChatSource = { id: string; content: string; similarity: number };
+type ChatMessage = Message & { sources?: ChatSource[] };
+
+const STARTERS = [
+  "Summarize the key ideas in my sources",
+  "Quiz me on the most important concepts",
+  "What should I focus on for revision?",
+];
 
 function formatTime(value: Message["createdAt"]) {
   try {
@@ -42,13 +62,7 @@ function formatTime(value: Message["createdAt"]) {
   }
 }
 
-const ChatBubble = memo(function ChatBubble({
-  item,
-  streaming,
-}: {
-  item: Message;
-  streaming?: boolean;
-}) {
+const ChatBubble = memo(function ChatBubble({ item }: { item: ChatMessage }) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const isUser = item.role === "user";
@@ -70,15 +84,33 @@ const ChatBubble = memo(function ChatBubble({
         ]}
       >
         <Text style={[styles.role, isUser && styles.userRole]}>
-          {isUser ? "You" : "Studbady"}
+          {isUser ? "You" : "Stubady"}
           {formatTime(item.createdAt)
             ? `  ·  ${formatTime(item.createdAt)}`
             : ""}
         </Text>
         <Text selectable style={[styles.message, isUser && styles.userMessage]}>
           {item.content}
-          {streaming ? <Text style={styles.cursor}> ▍</Text> : null}
+          {item.id === "streaming-reply" ? (
+            <Text style={styles.cursor}> ▍</Text>
+          ) : null}
         </Text>
+        {!isUser && item.sources && item.sources.length > 0 ? (
+          <View style={styles.sources}>
+            <Text style={styles.sourcesLabel}>
+              Grounded in {item.sources.length}{" "}
+              {item.sources.length === 1 ? "source" : "sources"}
+            </Text>
+            <View style={styles.sourceChips}>
+              {item.sources.slice(0, 3).map((source) => (
+                <Chip
+                  key={source.id}
+                  label={source.content.replace(/\s+/g, " ").slice(0, 64)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -140,11 +172,11 @@ const Composer = memo(function Composer({
                 ]}
               >
                 {isPending ? (
-                  <ActivityIndicator size="small" color={palette.onPrimary} />
+                  <ActivityIndicator size="small" color={palette.primaryInk} />
                 ) : (
                   <SymbolView
                     name={{ android: "arrow_upward", ios: "arrow.up" }}
-                    tintColor={palette.onPrimary}
+                    tintColor={palette.primaryInk}
                     size={20}
                   />
                 )}
@@ -164,15 +196,27 @@ export default function Chat() {
   const { palette } = useTheme();
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, studySetId } = useLocalSearchParams<{
+    id: string;
+    studySetId: string;
+  }>();
   const insets = useSafeAreaInsets();
   const messages = useMessages(id);
   const send = useSendMessage(id);
+  const set = useStudySet(studySetId);
+  const sources = useSources(studySetId);
   const form = useForm<{ message: string }>({
     resolver: zodResolver(schema),
     defaultValues: { message: "" },
   });
-  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
+  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>(
+    [],
+  );
+  // Sources arrive with the send result, not with persisted history. Keyed
+  // by reply text so the fresh reply keeps its citations after refetch.
+  const [freshSources, setFreshSources] = useState<
+    Record<string, ChatSource[]>
+  >({});
 
   // Drop optimistic copies once the server echo arrives — keyed on content so
   // a slow refetch never makes a sent message flicker away.
@@ -187,8 +231,12 @@ export default function Chat() {
     if (allPersisted) setOptimisticMessages([]);
   }, [messages.items, optimisticMessages]);
 
-  const displayMessages = useMemo<Message[]>(() => {
-    const merged: Message[] = [...messages.items];
+  const displayMessages = useMemo<ChatMessage[]>(() => {
+    const merged: ChatMessage[] = messages.items.map((item) => ({
+      ...item,
+      sources:
+        item.role === "assistant" ? freshSources[item.content] : undefined,
+    }));
     for (const message of optimisticMessages) {
       const alreadyPersisted = merged.some(
         (item) =>
@@ -205,7 +253,7 @@ export default function Chat() {
       });
     }
     return merged;
-  }, [messages.items, optimisticMessages, send.streamingReply]);
+  }, [messages.items, optimisticMessages, send.streamingReply, freshSources]);
 
   // Inverted = newest at the visual bottom with no scroll-to-end timers, so
   // streaming + keyboard stay smooth.
@@ -219,7 +267,7 @@ export default function Chat() {
       const text = message.trim();
       if (!text || send.isPending) return;
       hapticLight();
-      const optimisticMessage: Message = {
+      const optimisticMessage: ChatMessage = {
         id: `optimistic-${Date.now()}`,
         role: "user",
         content: text,
@@ -229,6 +277,10 @@ export default function Chat() {
       form.reset();
       try {
         const result = await send.mutateAsync(text);
+        setFreshSources((current) => ({
+          ...current,
+          [result.reply]: (result.sources ?? []) as ChatSource[],
+        }));
         setOptimisticMessages([
           optimisticMessage,
           {
@@ -236,6 +288,7 @@ export default function Chat() {
             role: "assistant",
             content: result.reply,
             createdAt: new Date(),
+            sources: (result.sources ?? []) as ChatSource[],
           },
         ]);
       } catch {
@@ -256,6 +309,13 @@ export default function Chat() {
   const handleSend = useCallback(() => {
     void form.handleSubmit(submit)();
   }, [form, submit]);
+  const askStarter = useCallback(
+    (starter: string) => {
+      form.setValue("message", starter);
+      void form.handleSubmit(submit)();
+    },
+    [form, submit],
+  );
 
   if (messages.isPending) return <LoadingState label="Loading conversation…" />;
   if (messages.isError)
@@ -268,14 +328,38 @@ export default function Chat() {
       />
     );
 
+  const readyCount = sources.items.filter((s) => s.status === "ready").length;
+
   return (
-    <SafeAreaView edges={["bottom"]} style={ui.screen}>
+    <SafeAreaView edges={["top", "bottom"]} style={ui.screen}>
+      <View
+        style={[
+          ui.content,
+          { paddingBottom: 8, paddingTop: Math.max(insets.top, 8) },
+        ]}
+      >
+        <TopBar
+          title={set.data?.title ?? "Study chat"}
+          onBack={() =>
+            studySetId
+              ? router.replace({
+                  pathname: "/(app)/study-set/[id]",
+                  params: { id: studySetId },
+                })
+              : router.back()
+          }
+        />
+        {readyCount > 0 ? (
+          <Text style={styles.context}>
+            Answering from {readyCount} ready{" "}
+            {readyCount === 1 ? "source" : "sources"} in this set
+          </Text>
+        ) : null}
+      </View>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "android" ? "height" : "padding"}
-        keyboardVerticalOffset={90}
       >
-        <Stack.Screen options={{ title: "Study chat" }} />
         <FlatList
           inverted
           contentInsetAdjustmentBehavior="automatic"
@@ -303,11 +387,29 @@ export default function Chat() {
                   size={28}
                 />
               </View>
-              <Text style={styles.emptyTitle}>Ask your study buddy</Text>
-              <Text style={styles.emptyText}>
-                Ask anything about your processed study material — summaries,
-                key ideas, or exam-style practice.
+              <Text style={styles.emptyTitle}>
+                Ask about {set.data?.title ?? "this set"}
               </Text>
+              <Text style={styles.emptyText}>
+                Answers come only from ready material in this set — with the
+                source attached, so you can verify.
+              </Text>
+              <View style={styles.starters}>
+                {STARTERS.map((starter) => (
+                  <Pressable
+                    key={starter}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ask: ${starter}`}
+                    onPress={() => askStarter(starter)}
+                    style={({ pressed }) => [
+                      styles.starter,
+                      pressed && styles.starterPressed,
+                    ]}
+                  >
+                    <Text style={styles.starterText}>{starter}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           }
           ListHeaderComponent={
@@ -317,14 +419,12 @@ export default function Chat() {
                   <ActivityIndicator size="small" color={palette.primary} />
                 </View>
                 <View style={[styles.bubble, styles.assistantBubble]}>
-                  <Text style={styles.typingText}>Thinking…</Text>
+                  <Text style={styles.typingText}>Reading your sources…</Text>
                 </View>
               </View>
             ) : null
           }
-          renderItem={({ item }) => (
-            <ChatBubble item={item} streaming={item.id === "streaming-reply"} />
-          )}
+          renderItem={({ item }) => <ChatBubble item={item} />}
         />
         <Composer
           control={form.control}
@@ -345,9 +445,15 @@ export default function Chat() {
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
     flex: { flex: 1 },
+    context: {
+      color: palette.muted,
+      fontSize: 13,
+      lineHeight: 18,
+      paddingHorizontal: 4,
+    },
     listContent: {
       paddingHorizontal: 16,
-      paddingTop: 16,
+      paddingTop: 8,
       gap: 12,
       flexGrow: 1,
     },
@@ -370,23 +476,20 @@ const makeStyles = (palette: Palette) =>
       marginBottom: 2,
     },
     bubble: {
-      borderRadius: 20,
-      paddingHorizontal: 15,
+      borderRadius: radius.lg,
+      paddingHorizontal: 14,
       paddingVertical: 12,
-      gap: 4,
+      gap: 6,
       maxWidth: "100%",
     },
     userBubble: {
       backgroundColor: palette.primary,
-      borderBottomRightRadius: 8,
       ...shadow.raised,
     },
     assistantBubble: {
       backgroundColor: palette.surface,
       borderWidth: 1,
       borderColor: palette.line,
-      borderBottomLeftRadius: 8,
-      ...shadow.card,
     },
     role: {
       color: palette.faint,
@@ -394,23 +497,26 @@ const makeStyles = (palette: Palette) =>
       fontWeight: "800",
       letterSpacing: 0.4,
     },
-    userRole: { color: "rgba(255,255,255,0.75)" },
+    userRole: { color: palette.primaryInk },
     message: { color: palette.ink, fontSize: 16, lineHeight: 23 },
-    userMessage: { color: palette.onPrimary },
+    userMessage: { color: palette.primaryInk },
     cursor: { color: palette.primary, fontWeight: "800" },
+    sources: { gap: 6, paddingTop: 4 },
+    sourcesLabel: { color: palette.primary, fontSize: 12, fontWeight: "800" },
+    sourceChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
     typingRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
     typingText: { color: palette.muted, fontSize: 14, fontStyle: "italic" },
     emptyWrap: {
       alignItems: "center",
       gap: 10,
-      paddingVertical: 56,
-      paddingHorizontal: 32,
+      paddingVertical: 32,
+      paddingHorizontal: 24,
     },
     emptyIcon: {
       width: 72,
       height: 72,
       borderRadius: 36,
-      backgroundColor: palette.primarySoft,
+      backgroundColor: palette.pool,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 4,
@@ -427,6 +533,18 @@ const makeStyles = (palette: Palette) =>
       lineHeight: 21,
       textAlign: "center",
     },
+    starters: { gap: 8, marginTop: 8, width: "100%" },
+    starter: {
+      minHeight: 48,
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      borderRadius: radius.md,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    starterPressed: { opacity: 0.7 },
+    starterText: { color: palette.ink, fontSize: 14, fontWeight: "600" },
     composer: {
       paddingHorizontal: 12,
       paddingTop: 10,
@@ -439,8 +557,8 @@ const makeStyles = (palette: Palette) =>
       flexDirection: "row",
       alignItems: "flex-end",
       gap: 8,
-      backgroundColor: palette.bg,
-      borderWidth: 1.5,
+      backgroundColor: palette.inputBg,
+      borderWidth: 1,
       borderColor: palette.line,
       borderRadius: radius.xl,
       paddingLeft: 16,
@@ -467,10 +585,7 @@ const makeStyles = (palette: Palette) =>
       ...shadow.raised,
     },
     sendButtonDisabled: { opacity: 0.4, boxShadow: "none" },
-    sendButtonPressed: {
-      backgroundColor: palette.primaryDeep,
-      transform: [{ scale: 0.93 }],
-    },
+    sendButtonPressed: { opacity: 0.85, transform: [{ scale: 0.93 }] },
     error: { color: palette.danger, fontSize: 12, paddingLeft: 16 },
     sendError: {
       color: palette.danger,

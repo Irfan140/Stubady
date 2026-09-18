@@ -1,13 +1,8 @@
-import { Link, Stack, router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,64 +17,119 @@ import {
 } from "@/components/summary-reader-modal";
 import {
   Button,
-  Card,
-  EmptyState,
+  ProgressLine,
+  Screen,
+  Segmented,
+  Sheet,
+  TextField,
+  TopBar,
   ErrorState,
+  EmptyState,
   LoadingState,
   useUiStyles,
 } from "@/components/ui";
 import {
   useConversation,
+  useConversations,
   useCreateSource,
   useDecks,
+  useDeleteConversation,
   useDeleteSource,
   useDeleteStudySet,
+  useDeleteSummary,
   useGenerateFlashcards,
   useGenerateSummary,
   useRetrySource,
   useSources,
   useStudySet,
   useSummaries,
+  useUpdateStudySet,
 } from "@/features/study/api";
-import { FlashcardCountForm } from "@/features/study/components/flashcard-count-form";
-import { PdfSourceForm } from "@/features/study/components/pdf-source-form";
-import { SourceForm } from "@/features/study/components/source-form";
-import type { Source } from "@/features/study/types";
+import { IntakeSheet } from "@/features/study/components/intake-sheet";
+import type {
+  Conversation,
+  Deck,
+  Source,
+  Summary,
+} from "@/features/study/types";
+import { hapticMedium } from "@/lib/haptics";
 import { useTheme } from "@/stores/theme-store";
-import type { Palette } from "@/theme";
+import { radius, shadow, type Palette } from "@/theme";
 
-export default function StudySetDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [sourceMode, setSourceMode] = useState<"note" | "web" | null>(null);
-  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
-  const [pdfUploadOpen, setPdfUploadOpen] = useState(false);
-  const [generatedDeckId, setGeneratedDeckId] = useState<string | null>(null);
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const set = useStudySet(id);
-  const sources = useSources(id);
-  const summaries = useSummaries(id);
-  const decks = useDecks(id);
-  const createSource = useCreateSource(id);
-  const generateSummary = useGenerateSummary(id);
-  const generateCards = useGenerateFlashcards(id);
-  const askAi = useConversation(id);
-  const deleteSet = useDeleteStudySet();
-  const startChat = () => {
-    askAi.mutate(undefined, {
-      onSuccess: (conversation) =>
-        router.push({
-          pathname: "/chat/[id]",
-          params: { id: conversation.id, studySetId: id },
-        }),
-      onError: (error) => Alert.alert("Unable to start chat", error.message),
+type Segment = "sources" | "chats" | "decks" | "summaries";
+
+function formatDateTime(date?: Date | null) {
+  if (!date) return "";
+  try {
+    return date.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
-  };
-  const insets = useSafeAreaInsets();
+  } catch {
+    return "";
+  }
+}
+
+export default function StudySetHub() {
+  const { id, addSource, openSummary } = useLocalSearchParams<{
+    id: string;
+    addSource?: string;
+    openSummary?: string;
+  }>();
   const { palette } = useTheme();
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
+  const insets = useSafeAreaInsets();
 
-  if (set.isPending) return <LoadingState />;
+  const [segment, setSegment] = useState<Segment>("sources");
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [reader, setReader] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+  const [cardCount, setCardCount] = useState(12);
+
+  const set = useStudySet(id);
+  const sources = useSources(id);
+  const summaries = useSummaries(id);
+  const createSource = useCreateSource(id);
+  const askAi = useConversation(id);
+  const generateSummary = useGenerateSummary(id);
+  const updateSet = useUpdateStudySet(id);
+  const deleteSet = useDeleteStudySet();
+  const chatCount = useConversations(id).items.length;
+  const deckCount = useDecks(id).items.length;
+
+  useEffect(() => {
+    if (addSource === "1") {
+      setIntakeOpen(true);
+      router.setParams({ addSource: "0" });
+    }
+    // One-shot open; the param is flipped so returning here won't reopen.
+  }, [addSource]);
+
+  const summaryOpened = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof openSummary === "string" && openSummary.length > 0) {
+      if (summaryOpened.current === openSummary) return;
+      const target = summaries.items.find((s) => s.id === openSummary);
+      if (target) {
+        summaryOpened.current = openSummary;
+        setSegment("summaries");
+        setReader({
+          title: `Summary · ${formatDateTime(target.createdAt)}`,
+          content: target.content,
+        });
+        router.setParams({ openSummary: "0" });
+      }
+    }
+  }, [openSummary, summaries.items]);
+
+  if (set.isPending) return <LoadingState label="Opening study set…" />;
   if (set.isError)
     return (
       <ErrorState
@@ -89,6 +139,325 @@ export default function StudySetDetail() {
         }}
       />
     );
+
+  const total = sources.items.length;
+  const readyCount = sources.items.filter((s) => s.status === "ready").length;
+  const failedCount = sources.items.filter((s) => s.status === "failed").length;
+  const canStudy = readyCount > 0;
+
+  const startChat = () => {
+    askAi.mutate(undefined, {
+      onSuccess: (conversation) =>
+        router.push({
+          pathname: "/(app)/chat/[id]",
+          params: { id: conversation.id, studySetId: id },
+        }),
+      onError: (error) => Alert.alert("Unable to start chat", error.message),
+    });
+  };
+
+  const startSummary = () => {
+    setSegment("summaries");
+    generateSummary.mutate(undefined, {
+      onSuccess: (result) =>
+        setReader({
+          title: `Summary · ${formatDateTime(new Date())}`,
+          content: result.content,
+        }),
+      onError: (error) =>
+        Alert.alert("Unable to generate summary", error.message),
+    });
+  };
+
+  const startPractice = () => {
+    setSegment("decks");
+  };
+
+  const confirmDelete = () =>
+    Alert.alert(
+      "Delete study set?",
+      "This removes the study set, its sources, and everything generated from them.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            deleteSet.mutate(id, {
+              onSuccess: () => router.replace("/(app)/(tabs)"),
+              onError: (error) =>
+                Alert.alert("Unable to delete study set", error.message),
+            }),
+        },
+      ],
+    );
+
+  return (
+    <Screen>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={[
+          ui.content,
+          {
+            paddingTop: Math.max(insets.top, 12) + 4,
+            paddingBottom: 32,
+          },
+        ]}
+        stickyHeaderIndices={[1]}
+      >
+        <View style={styles.heading}>
+          <TopBar
+            title={set.data.title}
+            action={
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Study set options"
+                hitSlop={8}
+                onPress={() => setMenuOpen(true)}
+                style={({ pressed }) => [
+                  styles.menuButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <SymbolView
+                  name={{ ios: "ellipsis", android: "more_horiz" }}
+                  tintColor={palette.ink}
+                  size={22}
+                />
+              </Pressable>
+            }
+          />
+          {total > 0 ? (
+            <ProgressLine
+              ready={readyCount}
+              total={total}
+              caption={
+                failedCount > 0
+                  ? `${readyCount} of ${total} ready · ${failedCount} failed — study tools use ready sources only`
+                  : readyCount === total
+                    ? `${total} ${total === 1 ? "source" : "sources"} ready — study tools are live`
+                    : `${readyCount} of ${total} ready — study tools use ready sources only`
+              }
+            />
+          ) : (
+            <Text style={styles.hint}>
+              Add a source below — study tools wake up once one is ready.
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.actionBar}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ask AI about this set"
+            accessibilityState={{ disabled: !canStudy || askAi.isPending }}
+            disabled={!canStudy || askAi.isPending}
+            onPress={startChat}
+            style={({ pressed }) => [
+              styles.actionPrimary,
+              (!canStudy || askAi.isPending) && styles.actionDisabled,
+              pressed && canStudy && styles.pressed,
+            ]}
+          >
+            <SymbolView
+              name={{ android: "auto_awesome", ios: "sparkles" }}
+              tintColor={palette.primaryInk}
+              size={18}
+            />
+            <Text style={styles.actionPrimaryText}>
+              {askAi.isPending ? "Opening…" : "Ask"}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Generate a summary"
+            disabled={generateSummary.isPending}
+            onPress={startSummary}
+            style={({ pressed }) => [
+              styles.actionGhost,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.actionGhostText}>
+              {generateSummary.isPending ? "Writing…" : "Summarize"}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Practice with flashcards"
+            onPress={startPractice}
+            style={({ pressed }) => [
+              styles.actionGhost,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.actionGhostText}>Practice</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.body}>
+          <Segmented<Segment>
+            ariaLabel="Study set sections"
+            value={segment}
+            onChange={setSegment}
+            options={[
+              {
+                value: "sources",
+                label: `Sources${total > 0 ? ` ${total}` : ""}`,
+              },
+              {
+                value: "chats",
+                label: `Chats${chatCount > 0 ? ` ${chatCount}` : ""}`,
+              },
+              {
+                value: "decks",
+                label: `Decks${deckCount > 0 ? ` ${deckCount}` : ""}`,
+              },
+              { value: "summaries", label: "Summaries" },
+            ]}
+          />
+
+          {segment === "sources" ? (
+            <SourcesSegment studySetId={id} onAdd={() => setIntakeOpen(true)} />
+          ) : segment === "chats" ? (
+            <ChatsSegment
+              studySetId={id}
+              onNew={startChat}
+              creating={askAi.isPending}
+            />
+          ) : segment === "decks" ? (
+            <DecksSegment
+              studySetId={id}
+              count={cardCount}
+              onCountChange={setCardCount}
+            />
+          ) : (
+            <SummariesSegment
+              studySetId={id}
+              generating={generateSummary.isPending}
+              onGenerate={startSummary}
+              onOpen={(title, content) => setReader({ title, content })}
+            />
+          )}
+        </View>
+      </ScrollView>
+
+      <IntakeSheet
+        visible={intakeOpen}
+        onClose={() => setIntakeOpen(false)}
+        studySetId={id}
+        mutation={createSource}
+      />
+
+      <Sheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title="Study set options"
+      >
+        <Button
+          title="Rename set"
+          variant="secondary"
+          onPress={() => {
+            setMenuOpen(false);
+            setRenameOpen(true);
+          }}
+        />
+        <Button
+          title="Delete set"
+          variant="danger"
+          loading={deleteSet.isPending}
+          onPress={() => {
+            setMenuOpen(false);
+            confirmDelete();
+          }}
+        />
+      </Sheet>
+
+      <RenameSheet
+        visible={renameOpen}
+        initialTitle={set.data.title}
+        saving={updateSet.isPending}
+        error={updateSet.isError ? updateSet.error.message : null}
+        onClose={() => setRenameOpen(false)}
+        onSave={async (title) => {
+          try {
+            await updateSet.mutateAsync(title);
+            setRenameOpen(false);
+          } catch {
+            /* error renders in the sheet */
+          }
+        }}
+      />
+
+      {reader ? (
+        <SummaryReaderModal
+          visible
+          title={reader.title}
+          content={reader.content}
+          onClose={() => setReader(null)}
+        />
+      ) : null}
+    </Screen>
+  );
+}
+
+function RenameSheet({
+  visible,
+  initialTitle,
+  saving,
+  error,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  initialTitle: string;
+  saving: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: (title: string) => Promise<void>;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  useEffect(() => {
+    if (visible) setTitle(initialTitle);
+  }, [visible, initialTitle]);
+  const styles = useUiStyles();
+  const trimmed = title.trim();
+  return (
+    <Sheet visible={visible} onClose={onClose} title="Rename set">
+      <TextField
+        label="Title"
+        value={title}
+        onChangeText={setTitle}
+        placeholder="e.g. Biology — Cell structure"
+        maxLength={200}
+        editable={!saving}
+      />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Button
+        title="Save changes"
+        loading={saving}
+        disabled={trimmed.length === 0}
+        onPress={() => {
+          void onSave(trimmed);
+        }}
+      />
+    </Sheet>
+  );
+}
+
+/* ------------------------------- segments ------------------------------- */
+
+function SourcesSegment({
+  studySetId,
+  onAdd,
+}: {
+  studySetId: string;
+  onAdd: () => void;
+}) {
+  const sources = useSources(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  if (sources.isPending) return <LoadingState label="Loading sources…" />;
   if (sources.isError)
     return (
       <ErrorState
@@ -98,334 +467,19 @@ export default function StudySetDetail() {
         }}
       />
     );
-
   return (
-    // Plain View on purpose: every input on this screen (source sheet, PDF
-    // sheet, flashcard count) already owns a KeyboardAvoidingView. An outer
-    // one can keep a stale shrunken height after popping back from chat,
-    // leaving a blank band under the list.
-    <View style={ui.screen}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <FlatList<Source>
-        contentInsetAdjustmentBehavior="automatic"
-        style={ui.screen}
-        contentContainerStyle={[
-          ui.content,
-          {
-            paddingTop: Math.max(insets.top, 12) + 4,
-            paddingBottom: Math.max(insets.bottom, 16) + 24,
-          },
-        ]}
-        data={sources.items}
-        keyExtractor={(item) => item.id}
-        onEndReached={() => {
-          if (sources.hasNextPage && !sources.isFetchingNextPage)
-            void sources.fetchNextPage();
-        }}
-        onEndReachedThreshold={0.4}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.navBar}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-                hitSlop={12}
-                onPress={() => router.back()}
-                style={({ pressed }) => [
-                  styles.backButton,
-                  pressed && styles.backButtonPressed,
-                ]}
-              >
-                <SymbolView
-                  name={{ ios: "chevron.left", android: "arrow_back" }}
-                  tintColor={palette.ink}
-                  size={22}
-                />
-              </Pressable>
-              <Text numberOfLines={1} style={styles.navTitle}>
-                {set.data.title}
-              </Text>
-              <View style={styles.navSpacer} />
-            </View>
-            <Card style={styles.hero}>
-              <Text style={styles.heroTitle}>{set.data.title}</Text>
-              <Text style={styles.heroSubtitle}>
-                Build a focused revision space from your own material.
-              </Text>
-              <View style={styles.actions}>
-                <View style={styles.actionFlex}>
-                  <Button
-                    title="+ Add source"
-                    onPress={() => setSourcePickerOpen(true)}
-                  />
-                </View>
-                {sources.items.length > 0 ? (
-                  <View style={styles.actionFlex}>
-                    <Button
-                      title="Ask AI"
-                      variant="secondary"
-                      loading={askAi.isPending}
-                      onPress={startChat}
-                    />
-                  </View>
-                ) : null}
-              </View>
-            </Card>
-            <SectionTitle title="Sources" />
-          </View>
-        }
-        ListEmptyComponent={
-          <EmptyState
-            title="No sources yet"
-            message="Add a PDF, note, or web page to start processing your material."
-          />
-        }
-        renderItem={({ item }) => <SourceRow item={item} studySetId={id} />}
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <SectionTitle title="Study tools" />
-            <Card>
-              <Text style={styles.cardTitle}>Summary</Text>
-              {summaries.isError ? (
-                <>
-                  <Text style={styles.error} selectable>
-                    {summaries.error.message}
-                  </Text>
-                  <Button
-                    title="Retry summaries"
-                    variant="secondary"
-                    onPress={() => {
-                      void summaries.refetch();
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  {summaries.items[0]?.content ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Open full summary"
-                      onPress={() => setSummaryOpen(true)}
-                    >
-                      <Text numberOfLines={3} selectable style={styles.preview}>
-                        {getSummaryPreview(summaries.items[0].content)}
-                      </Text>
-                      <Text style={styles.link}>Read full summary ›</Text>
-                    </Pressable>
-                  ) : (
-                    <Text style={ui.muted}>
-                      Generate a concise Markdown summary once a source is
-                      ready.
-                    </Text>
-                  )}
-                  <Button
-                    title="Generate summary"
-                    loading={generateSummary.isPending}
-                    onPress={() => {
-                      generateSummary.mutate(undefined, {
-                        // No completion alert — the fresh summary appears in
-                        // the preview above with its "Read full summary" link.
-                        onError: (error) =>
-                          Alert.alert(
-                            "Unable to generate summary",
-                            error.message,
-                          ),
-                      });
-                    }}
-                  />
-                  <Button
-                    title="View summary history"
-                    variant="secondary"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/study-set/[id]/summaries",
-                        params: { id },
-                      })
-                    }
-                  />
-                </>
-              )}
-            </Card>
-            <Card>
-              <Text style={styles.cardTitle}>Flashcards</Text>
-              {decks.isError ? (
-                <>
-                  <Text style={styles.error} selectable>
-                    {decks.error.message}
-                  </Text>
-                  <Button
-                    title="Retry decks"
-                    variant="secondary"
-                    onPress={() => {
-                      void decks.refetch();
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Text style={ui.muted}>
-                    {decks.items[0]
-                      ? `${decks.items[0].cardCount} cards ready`
-                      : "Turn your processed material into a review deck."}
-                  </Text>
-                  {decks.items[0] ? (
-                    <Link
-                      href={{
-                        pathname: "/deck/[id]",
-                        params: { id: decks.items[0].id, studySetId: id },
-                      }}
-                      asChild
-                    >
-                      <Pressable>
-                        <Text style={styles.link}>Review latest deck ›</Text>
-                      </Pressable>
-                    </Link>
-                  ) : null}
-                  <FlashcardCountForm
-                    disabled={generateCards.isPending}
-                    onSubmit={async (count) => {
-                      try {
-                        const result = await generateCards.mutateAsync(count);
-                        // No completion alert — the "Review generated
-                        // flashcards" button below appears for the new deck.
-                        setGeneratedDeckId(result.deckId);
-                      } catch {
-                        /* the mutation error is shown below */
-                      }
-                    }}
-                  />
-                  {generateCards.isPending ? (
-                    <View style={styles.processing}>
-                      <ActivityIndicator color={palette.primary} />
-                      <Text style={styles.processingTitle}>
-                        Building your review deck...
-                      </Text>
-                      <Text style={ui.muted}>
-                        Creating focused questions from your processed sources.
-                      </Text>
-                    </View>
-                  ) : null}
-                  {generatedDeckId ? (
-                    <Button
-                      title="Review generated flashcards"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/deck/[id]",
-                          params: { id: generatedDeckId, studySetId: id },
-                        })
-                      }
-                    />
-                  ) : null}
-                  <Button
-                    title="View deck history"
-                    variant="secondary"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/study-set/[id]/decks",
-                        params: { id },
-                      })
-                    }
-                  />
-                </>
-              )}
-            </Card>
-            <Card style={styles.manage}>
-              <Text style={styles.cardTitle}>Manage</Text>
-              <Button
-                title="Edit study-set title"
-                variant="secondary"
-                onPress={() =>
-                  router.push({
-                    pathname: "/study-set/[id]/edit",
-                    params: { id },
-                  })
-                }
-              />
-              <Button
-                title="View chat history"
-                variant="secondary"
-                onPress={() =>
-                  router.push({
-                    pathname: "/study-set/[id]/conversations",
-                    params: { id },
-                  })
-                }
-              />
-              <Button
-                title="Delete study set"
-                variant="danger"
-                onPress={() =>
-                  Alert.alert(
-                    "Delete study set?",
-                    "This removes the study set, its sources, and generated study material.",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: () =>
-                          deleteSet.mutate(id, {
-                            onSuccess: () => router.replace("/(app)/(tabs)"),
-                            onError: (error) =>
-                              Alert.alert(
-                                "Unable to delete study set",
-                                error.message,
-                              ),
-                          }),
-                      },
-                    ],
-                  )
-                }
-                loading={deleteSet.isPending}
-              />
-            </Card>
-            {generateSummary.isError ? (
-              <Text style={styles.error} selectable>
-                {generateSummary.error.message}
-              </Text>
-            ) : null}
-            {generateCards.isError ? (
-              <Text style={styles.error} selectable>
-                {generateCards.error.message}
-              </Text>
-            ) : null}
-          </View>
-        }
-      />
-      {summaries.items[0]?.content ? (
-        <SummaryReaderModal
-          visible={summaryOpen}
-          title={set.data.title}
-          content={summaries.items[0].content}
-          onClose={() => setSummaryOpen(false)}
+    <View style={styles.segment}>
+      <Button title="+ Add source" variant="secondary" onPress={onAdd} />
+      {sources.items.length === 0 ? (
+        <EmptyState
+          title="No sources yet"
+          message="Add a PDF, a note, or a web page. Processing runs in the background — you'll see each source turn ready."
         />
-      ) : null}
-      <SourcePickerModal
-        visible={sourcePickerOpen}
-        onClose={() => setSourcePickerOpen(false)}
-        onSelect={(mode) => {
-          setSourcePickerOpen(false);
-          if (mode === "pdf") {
-            setPdfUploadOpen(true);
-          } else {
-            setSourceMode(mode);
-          }
-        }}
-      />
-      <SourceEntryModal
-        mode={sourceMode}
-        studySetId={id}
-        mutation={createSource}
-        onClose={() => setSourceMode(null)}
-      />
-      {pdfUploadOpen ? (
-        <PdfSourceForm
-          studySetId={id}
-          autoOpen
-          onDone={() => setPdfUploadOpen(false)}
-          onClose={() => setPdfUploadOpen(false)}
-        />
-      ) : null}
+      ) : (
+        sources.items.map((item) => (
+          <SourceRow key={item.id} item={item} studySetId={studySetId} />
+        ))
+      )}
     </View>
   );
 }
@@ -436,69 +490,56 @@ function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const active = item.status === "pending" || item.status === "processing";
+  const statusColor =
+    item.status === "ready"
+      ? palette.success
+      : item.status === "failed"
+        ? palette.danger
+        : palette.warning;
+  const statusLabel =
+    item.status === "pending"
+      ? "Queued"
+      : item.status === "processing"
+        ? "Processing"
+        : item.status === "ready"
+          ? "Ready"
+          : "Failed";
   return (
-    <Card>
-      <View style={styles.sourceHeader}>
-        <Text style={styles.sourceType}>{item.type.toUpperCase()}</Text>
-        <View
-          style={[
-            styles.statusPill,
-            item.status === "ready"
-              ? styles.readyPill
-              : item.status === "failed"
-                ? styles.failedPill
-                : styles.processingPill,
-          ]}
-        >
-          {active ? (
-            <ActivityIndicator size="small" color={palette.primary} />
-          ) : null}
-          <Text style={styles.statusText}>
-            {active
-              ? item.status === "pending"
-                ? "Queued"
-                : "Processing"
-              : item.status === "ready"
-                ? "Ready"
-                : "Failed"}
+    <View style={styles.row}>
+      <View style={styles.rowTop}>
+        <View style={styles.rowMain}>
+          <View style={styles.rowHeader}>
+            <Text style={styles.rowType}>{item.type.toUpperCase()}</Text>
+            <View style={styles.statusWrap}>
+              {active ? null : (
+                <View
+                  style={[styles.statusDot, { backgroundColor: statusColor }]}
+                />
+              )}
+              <Text style={styles.statusText}>{statusLabel}</Text>
+            </View>
+          </View>
+          <Text selectable style={styles.rowBody} numberOfLines={3}>
+            {item.type === "web" ? item.url : item.content}
           </Text>
+          {active ? (
+            <Text style={styles.rowMeta}>
+              {item.status === "pending"
+                ? "Waiting to be processed…"
+                : "Extracting content and preparing study tools…"}
+            </Text>
+          ) : null}
+          {item.error_message ? (
+            <Text style={styles.rowError} selectable>
+              {item.error_message}
+            </Text>
+          ) : null}
         </View>
-      </View>
-      <Text selectable style={styles.sourceText} numberOfLines={3}>
-        {item.type === "web" ? item.url : item.content}
-      </Text>
-      {active ? (
-        <Text style={styles.processingText}>
-          {item.status === "pending"
-            ? "Waiting to be processed…"
-            : "Extracting content and preparing study tools…"}
-        </Text>
-      ) : null}
-      {item.error_message ? (
-        <Text style={styles.error} selectable>
-          {item.error_message}
-        </Text>
-      ) : null}
-      <View style={styles.sourceActions}>
-        {/* Retry for failed sources, and for PDFs stuck in `pending` (their
-            upload never completed — retrying surfaces a clear error instead
-            of an endless "Queued" state). */}
-        {item.status === "failed" ||
-        (item.status === "pending" && item.type === "pdf") ? (
-          <Button
-            title={retry.isPending ? "Retrying..." : "Retry"}
-            onPress={() =>
-              retry.mutate(item.id, {
-                onError: (error) =>
-                  Alert.alert("Unable to retry source", error.message),
-              })
-            }
-            disabled={retry.isPending}
-          />
-        ) : null}
-        <Button
-          title="Delete"
-          variant="danger"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Delete source"
+          hitSlop={8}
+          disabled={remove.isPending}
           onPress={() =>
             Alert.alert(
               "Delete source?",
@@ -517,244 +558,531 @@ function SourceRow({ item, studySetId }: { item: Source; studySetId: string }) {
               ],
             )
           }
-          disabled={remove.isPending}
+          style={({ pressed }) => [
+            styles.trashButton,
+            pressed && styles.pressed,
+            remove.isPending && styles.actionDisabled,
+          ]}
+        >
+          <SymbolView
+            name={{ ios: "trash", android: "delete" }}
+            tintColor={palette.danger}
+            size={20}
+          />
+        </Pressable>
+      </View>
+      {item.status === "failed" ||
+      (item.status === "pending" && item.type === "pdf") ? (
+        <Button
+          title={retry.isPending ? "Retrying…" : "Retry"}
+          variant="secondary"
+          disabled={retry.isPending}
+          onPress={() =>
+            retry.mutate(item.id, {
+              onError: (error) =>
+                Alert.alert("Unable to retry source", error.message),
+            })
+          }
         />
-      </View>
-    </Card>
+      ) : null}
+    </View>
   );
 }
 
-function SectionTitle({ title }: { title: string }) {
-  const { palette } = useTheme();
-  const styles = useMemo(() => makeStyles(palette), [palette]);
-  return <Text style={styles.section}>{title}</Text>;
-}
-
-function SourcePickerModal({
-  visible,
-  onClose,
-  onSelect,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onSelect: (mode: "note" | "web" | "pdf") => void;
-}) {
-  const { palette } = useTheme();
-  const styles = useMemo(() => makeStyles(palette), [palette]);
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.pickerBackdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.picker}>
-          <Text style={styles.pickerTitle}>Add source</Text>
-          <Text style={styles.pickerSubtitle}>
-            Choose the type of study material.
-          </Text>
-          <Button title="PDF document" onPress={() => onSelect("pdf")} />
-          <Button title="Note" onPress={() => onSelect("note")} />
-          <Button title="Web page" onPress={() => onSelect("web")} />
-          <Button title="Cancel" variant="secondary" onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function SourceEntryModal({
-  mode,
+function ChatsSegment({
   studySetId,
-  mutation,
-  onClose,
+  onNew,
+  creating,
 }: {
-  mode: "note" | "web" | null;
   studySetId: string;
-  mutation: {
-    mutateAsync: (
-      input:
-        | { type: "note"; studySetId: string; content: string }
-        | { type: "web"; studySetId: string; url: string },
-    ) => Promise<unknown>;
-    isPending: boolean;
-    error: Error | null;
-  };
-  onClose: () => void;
+  onNew: () => void;
+  creating: boolean;
 }) {
-  const insets = useSafeAreaInsets();
+  const query = useConversations(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  if (query.isPending) return <LoadingState label="Loading chats…" />;
+  if (query.isError)
+    return (
+      <ErrorState
+        message={query.error.message}
+        onRetry={() => {
+          void query.refetch();
+        }}
+      />
+    );
+  return (
+    <View style={styles.segment}>
+      <Button
+        title={creating ? "Opening…" : "+ New chat"}
+        variant="secondary"
+        disabled={creating}
+        onPress={onNew}
+      />
+      {query.items.length === 0 ? (
+        <EmptyState
+          title="No chats yet"
+          message="Ask anything about this set's ready material — answers cite the source they came from."
+        />
+      ) : (
+        query.items.map((item, index) => (
+          <ChatRow
+            key={item.id}
+            item={item}
+            index={index}
+            studySetId={studySetId}
+          />
+        ))
+      )}
+    </View>
+  );
+}
+
+function ChatRow({
+  item,
+  index,
+  studySetId,
+}: {
+  item: Conversation;
+  index: number;
+  studySetId: string;
+}) {
+  const remove = useDeleteConversation(studySetId);
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   return (
-    <Modal
-      visible={mode !== null}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Resume conversation ${index + 1}`}
+      onPress={() =>
+        router.push({
+          pathname: "/(app)/chat/[id]",
+          params: { id: item.id, studySetId },
+        })
+      }
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <KeyboardAvoidingView
-        style={styles.modalKeyboard}
-        behavior={Platform.OS === "android" ? "height" : "padding"}
-        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
+      <View style={styles.rowMain}>
+        <Text style={styles.rowMeta}>
+          {formatDateTime(item.updatedAt ?? item.createdAt) ||
+            `Chat ${index + 1}`}
+        </Text>
+        <Text style={styles.rowBody}>Study chat — tap to resume</Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Delete conversation ${index + 1}`}
+        hitSlop={10}
+        disabled={remove.isPending}
+        onPress={() =>
+          Alert.alert(
+            "Delete conversation?",
+            "This removes its messages. This cannot be undone.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: () =>
+                  remove.mutate(item.id, {
+                    onError: (error) =>
+                      Alert.alert(
+                        "Unable to delete conversation",
+                        error.message,
+                      ),
+                  }),
+              },
+            ],
+          )
+        }
+        style={styles.deleteHit}
       >
-        <View style={styles.pickerBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-          <View
-            style={[
-              styles.entrySheet,
-              { paddingBottom: Math.max(insets.bottom, 18) },
+        <SymbolView
+          name={{ ios: "trash", android: "delete" }}
+          tintColor={palette.danger}
+          size={18}
+        />
+      </Pressable>
+    </Pressable>
+  );
+}
+
+function DecksSegment({
+  studySetId,
+  count,
+  onCountChange,
+}: {
+  studySetId: string;
+  count: number;
+  onCountChange: (count: number) => void;
+}) {
+  const query = useDecks(studySetId);
+  const generate = useGenerateFlashcards(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const build = async () => {
+    try {
+      const result = await generate.mutateAsync(count);
+      router.push({
+        pathname: "/(app)/deck/[id]",
+        params: { id: result.deckId, studySetId },
+      });
+    } catch (error) {
+      Alert.alert(
+        "Unable to build deck",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
+  };
+  return (
+    <View style={styles.segment}>
+      <View style={styles.practice}>
+        <Text style={styles.practiceTitle}>Build a review deck</Text>
+        <Text style={styles.practiceBody}>
+          Focused questions from ready material in this set. Opens straight into
+          review.
+        </Text>
+        <View style={styles.stepper}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Fewer cards"
+            disabled={generate.isPending || count <= 1}
+            onPress={() => onCountChange(Math.max(1, count - 1))}
+            style={({ pressed }) => [
+              styles.stepButton,
+              pressed && styles.pressed,
             ]}
           >
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.entryScroll}
-            >
-              <View style={styles.entryHeader}>
-                <Text style={styles.pickerTitle}>
-                  {mode === "note" ? "Add a note" : "Add a web page"}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Close source form"
-                  onPress={onClose}
-                  style={styles.close}
-                >
-                  <Text style={styles.closeText}>×</Text>
-                </Pressable>
-              </View>
-              {mode ? (
-                <SourceForm
-                  key={mode}
-                  studySetId={studySetId}
-                  initialType={mode}
-                  mutation={mutation}
-                  onDone={onClose}
-                />
-              ) : null}
-            </ScrollView>
-          </View>
+            <Text style={styles.stepText}>−</Text>
+          </Pressable>
+          <Text style={styles.stepCount}>
+            {count} {count === 1 ? "card" : "cards"}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="More cards"
+            disabled={generate.isPending || count >= 20}
+            onPress={() => onCountChange(Math.min(20, count + 1))}
+            style={({ pressed }) => [
+              styles.stepButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.stepText}>+</Text>
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        <Button
+          title={generate.isPending ? "Building deck…" : "Build & review"}
+          loading={generate.isPending}
+          onPress={() => {
+            hapticMedium();
+            void build();
+          }}
+        />
+      </View>
+      {query.isPending ? <LoadingState label="Loading decks…" /> : null}
+      {query.isError ? (
+        <ErrorState
+          message={query.error.message}
+          onRetry={() => {
+            void query.refetch();
+          }}
+        />
+      ) : (
+        query.items.map((item) => (
+          <DeckRow key={item.id} item={item} studySetId={studySetId} />
+        ))
+      )}
+      {!query.isPending && !query.isError && query.items.length === 0 ? (
+        <EmptyState
+          title="No decks yet"
+          message="Build your first deck above — past decks collect here for re-review."
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function DeckRow({ item, studySetId }: { item: Deck; studySetId: string }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Review ${item.title}`}
+      onPress={() =>
+        router.push({
+          pathname: "/(app)/deck/[id]",
+          params: { id: item.id, studySetId },
+        })
+      }
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+    >
+      <View style={styles.rowMain}>
+        <Text style={styles.rowMeta}>{formatDateTime(item.createdAt)}</Text>
+        <Text style={styles.rowBody} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.rowMeta}>
+          {item.cardCount} {item.cardCount === 1 ? "card" : "cards"} · Review ›
+        </Text>
+      </View>
+      <SymbolView
+        name={{ ios: "chevron.right", android: "chevron_right" }}
+        tintColor={palette.faint}
+        size={20}
+      />
+    </Pressable>
+  );
+}
+
+function SummariesSegment({
+  studySetId,
+  generating,
+  onGenerate,
+  onOpen,
+}: {
+  studySetId: string;
+  generating: boolean;
+  onGenerate: () => void;
+  onOpen: (title: string, content: string) => void;
+}) {
+  const query = useSummaries(studySetId);
+  const remove = useDeleteSummary(studySetId);
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  if (query.isPending) return <LoadingState label="Loading summaries…" />;
+  if (query.isError)
+    return (
+      <ErrorState
+        message={query.error.message}
+        onRetry={() => {
+          void query.refetch();
+        }}
+      />
+    );
+  return (
+    <View style={styles.segment}>
+      <Button
+        title={generating ? "Writing summary…" : "+ New summary"}
+        variant="secondary"
+        loading={generating}
+        onPress={onGenerate}
+      />
+      {query.items.length === 0 && !generating ? (
+        <EmptyState
+          title="No summaries yet"
+          message="Generate one before a lecture or the night before an exam — each version is kept here."
+        />
+      ) : (
+        query.items.map((item, index) => (
+          <SummaryRow
+            key={item.id}
+            item={item}
+            index={query.items.length - index}
+            studySetId={studySetId}
+            deleting={remove.isPending}
+            onDelete={() =>
+              Alert.alert(
+                "Delete summary?",
+                "This removes the generated summary. This cannot be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () =>
+                      remove.mutate(item.id, {
+                        onError: (error) =>
+                          Alert.alert(
+                            "Unable to delete summary",
+                            error.message,
+                          ),
+                      }),
+                  },
+                ],
+              )
+            }
+            onOpen={() =>
+              onOpen(
+                `Summary · ${formatDateTime(item.createdAt)}`,
+                item.content,
+              )
+            }
+          />
+        ))
+      )}
+    </View>
+  );
+}
+
+function SummaryRow({
+  item,
+  index,
+  studySetId,
+  deleting,
+  onDelete,
+  onOpen,
+}: {
+  item: Summary;
+  index: number;
+  studySetId: string;
+  deleting: boolean;
+  onDelete: () => void;
+  onOpen: () => void;
+}) {
+  void studySetId;
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Read summary ${index}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+    >
+      <View style={styles.rowMain}>
+        <Text style={styles.rowMeta}>
+          {formatDateTime(item.createdAt) || `Summary ${index}`}
+        </Text>
+        <Text style={styles.rowBody} numberOfLines={3}>
+          {getSummaryPreview(item.content)}
+        </Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Delete summary ${index}`}
+        hitSlop={10}
+        disabled={deleting}
+        onPress={onDelete}
+        style={styles.deleteHit}
+      >
+        <SymbolView
+          name={{ ios: "trash", android: "delete" }}
+          tintColor={palette.danger}
+          size={18}
+        />
+      </Pressable>
+    </Pressable>
   );
 }
 
 const makeStyles = (palette: Palette) =>
   StyleSheet.create({
-    header: { gap: 12 },
-    preview: { color: palette.body, fontSize: 15, lineHeight: 22 },
-    footer: { gap: 12, paddingTop: 8 },
-    title: { color: palette.ink, fontSize: 30, fontWeight: "800" },
-    navBar: {
+    heading: { gap: 10 },
+    hint: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    actionBar: {
+      flexDirection: "row",
+      gap: 8,
+      paddingVertical: 8,
+      backgroundColor: palette.bg,
+    },
+    actionPrimary: {
+      flex: 1.2,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      marginBottom: 2,
+      justifyContent: "center",
+      gap: 6,
+      minHeight: 52,
+      borderRadius: radius.md,
+      backgroundColor: palette.primary,
+      ...shadow.raised,
     },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    actionGhost: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 52,
+      borderRadius: radius.md,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    actionPrimaryText: {
+      color: palette.primaryInk,
+      fontSize: 16,
+      fontWeight: "800",
+    },
+    actionGhostText: { color: palette.ink, fontSize: 15, fontWeight: "700" },
+    actionDisabled: { opacity: 0.45 },
+    pressed: { opacity: 0.75 },
+    body: { gap: 12 },
+    segment: { gap: 10 },
+    menuButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: palette.surface,
       borderWidth: 1,
       borderColor: palette.line,
     },
-    backButtonPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
-    navTitle: { flex: 1, color: palette.ink, fontSize: 17, fontWeight: "700" },
-    navSpacer: { width: 40 },
-    hero: { gap: 10 },
-    heroTitle: { color: palette.ink, fontSize: 24, fontWeight: "800" },
-    heroSubtitle: { color: palette.muted, fontSize: 14, lineHeight: 20 },
-    actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-    actionFlex: { flex: 1 },
-    manage: { gap: 10 },
-    sourceActions: { flexDirection: "column", gap: 8 },
-    section: {
-      color: palette.ink,
-      fontSize: 21,
-      fontWeight: "800",
-      marginTop: 8,
-    },
-    sourceHeader: {
+    row: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
       gap: 10,
-    },
-    sourceType: {
-      color: palette.primary,
-      fontSize: 12,
-      fontWeight: "800",
-      letterSpacing: 1,
-    },
-    statusPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 5,
-      borderRadius: 999,
-      paddingHorizontal: 9,
-      paddingVertical: 5,
-    },
-    processingPill: { backgroundColor: palette.primarySoft },
-    readyPill: { backgroundColor: palette.successSoft },
-    failedPill: { backgroundColor: palette.dangerSoft },
-    statusText: { color: palette.body, fontSize: 12, fontWeight: "700" },
-    processingText: { color: palette.muted, fontSize: 13 },
-    sourceText: { color: palette.ink, fontSize: 16, fontWeight: "600" },
-    processing: {
-      alignItems: "center",
-      gap: 6,
-      borderRadius: 14,
+      backgroundColor: palette.surface,
+      borderRadius: radius.lg,
       padding: 14,
-      backgroundColor: palette.primarySoft,
+      borderWidth: 1,
+      borderColor: palette.line,
     },
-    processingTitle: { color: palette.primaryDeep, fontWeight: "700" },
-    cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "700" },
-    link: { color: palette.primary, fontWeight: "700" },
-    error: { color: palette.danger, textAlign: "center" },
-    pickerBackdrop: {
-      flex: 1,
-      justifyContent: "flex-end",
-      backgroundColor: "rgba(15, 23, 42, 0.42)",
-    },
-    picker: {
-      gap: 10,
-      padding: 20,
-      paddingBottom: 30,
-      borderTopLeftRadius: 26,
-      borderTopRightRadius: 26,
-      backgroundColor: palette.surface,
-    },
-    modalKeyboard: { flex: 1 },
-    entrySheet: {
-      maxHeight: "90%",
-      paddingTop: 6,
-      borderTopLeftRadius: 26,
-      borderTopRightRadius: 26,
-      backgroundColor: palette.surface,
-    },
-    entryScroll: { paddingTop: 6 },
-    entryHeader: {
+    rowMain: { flex: 1, gap: 4 },
+    rowTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+    rowHeader: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingBottom: 4,
+      justifyContent: "space-between",
+      gap: 10,
     },
-    close: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+    rowType: { color: palette.primary, fontSize: 12, fontWeight: "800" },
+    statusWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
+    statusDot: { width: 8, height: 8, borderRadius: 4 },
+    statusText: { color: palette.body, fontSize: 12, fontWeight: "700" },
+    rowBody: {
+      color: palette.ink,
+      fontSize: 15,
+      lineHeight: 22,
+      fontWeight: "600",
+    },
+    rowMeta: { color: palette.muted, fontSize: 13, lineHeight: 18 },
+    rowError: { color: palette.danger, fontSize: 13, lineHeight: 18 },
+    trashButton: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.md,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: palette.bg,
+      backgroundColor: palette.dangerSoft,
     },
-    closeText: { color: palette.body, fontSize: 25, lineHeight: 28 },
-    pickerTitle: { color: palette.ink, fontSize: 22, fontWeight: "800" },
-    pickerSubtitle: { color: palette.muted, fontSize: 14, marginBottom: 4 },
+    deleteHit: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    practice: {
+      gap: 10,
+      backgroundColor: palette.surface,
+      borderRadius: radius.lg,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderTopWidth: 3,
+      borderTopColor: palette.primary,
+    },
+    practiceTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+    practiceBody: { color: palette.muted, fontSize: 14, lineHeight: 20 },
+    stepper: { flexDirection: "row", alignItems: "center", gap: 14 },
+    stepButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.pool,
+    },
+    stepText: { color: palette.ink, fontSize: 24, fontWeight: "700" },
+    stepCount: { flex: 1, color: palette.ink, fontSize: 16, fontWeight: "800" },
   });

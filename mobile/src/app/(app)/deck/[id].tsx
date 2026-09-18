@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
@@ -11,7 +11,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { Button, ErrorState, LoadingState, useUiStyles } from "@/components/ui";
+import {
+  Button,
+  ErrorState,
+  LoadingState,
+  TopBar,
+  useUiStyles,
+} from "@/components/ui";
 import { useDeck } from "@/features/study/api";
 import { useTheme } from "@/stores/theme-store";
 import type { Palette } from "@/theme";
@@ -132,7 +138,17 @@ export default function Deck() {
 
   return (
     <View style={[ui.screen, ui.content]}>
-      <Stack.Screen options={{ title: query.data.title }} />
+      <TopBar
+        title={query.data.title}
+        onBack={() =>
+          studySetId
+            ? router.replace({
+                pathname: "/(app)/study-set/[id]",
+                params: { id: studySetId },
+              })
+            : router.back()
+        }
+      />
       <Text style={styles.progress}>
         {cardIndex + 1} / {cards.length}
       </Text>
@@ -197,8 +213,8 @@ const makeStyles = (palette: Palette) =>
     cardFace: {
       position: "absolute",
       inset: 0,
-      borderRadius: 18,
-      padding: 18,
+      borderRadius: 16,
+      padding: 20,
       gap: 14,
       backgroundColor: palette.surface,
       borderWidth: 1,
@@ -206,15 +222,18 @@ const makeStyles = (palette: Palette) =>
       backfaceVisibility: "hidden",
       justifyContent: "center",
     },
-    backFace: { backgroundColor: palette.successSoft },
-    frontFace: { backgroundColor: palette.primarySoft },
+    backFace: {
+      backgroundColor: palette.primarySoft,
+      borderColor: palette.line,
+    },
+    frontFace: { backgroundColor: palette.surface },
     label: {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 1.5,
     },
     questionLabel: { color: palette.primary },
-    answerLabel: { color: palette.success },
+    answerLabel: { color: palette.primaryDeep },
     cardText: {
       color: palette.ink,
       fontSize: 24,
