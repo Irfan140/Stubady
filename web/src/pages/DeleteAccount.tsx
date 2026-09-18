@@ -15,6 +15,16 @@ const IN_APP_STEPS = [
   "Select Delete account and confirm.",
 ];
 
+const REASON_LABELS: Record<string, string> = {
+  "finished-studying": "Finished my course or exams",
+  "missing-feature": "Missing a feature I need",
+  "too-complex": "Too complex for my workflow",
+  privacy: "Privacy or data concerns",
+  other: "Something else",
+};
+
+const SUPPORT_EMAIL = "irfanmehmud140@gmail.com";
+
 type Errors = { email?: string; confirm?: string };
 
 export function DeleteAccount() {
@@ -23,6 +33,19 @@ export function DeleteAccount() {
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const requestBody = (forEmail: string, forReason: string) =>
+    `Hello Stubady team,\n\nPlease delete my Stubady account and all associated data.\n\nAccount email: ${forEmail.trim()}\n${forReason ? `Reason for leaving (optional): ${REASON_LABELS[forReason] ?? forReason}\n` : ""}\nI understand this permanently removes my study sets, sources, chats, summaries, and flashcards.\n\nThank you.`;
+
+  const copyBody = async () => {
+    try {
+      await navigator.clipboard.writeText(requestBody(email, reason));
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -37,11 +60,10 @@ export function DeleteAccount() {
     if (Object.keys(next).length > 0) return;
 
     const subject = encodeURIComponent("Stubady account deletion request");
-    const body = encodeURIComponent(
-      `Hello Stubady team,\n\nPlease delete my Stubady account and all associated data.\n\nAccount email: ${email.trim()}\n${reason ? `Reason for leaving (optional): ${reason}\n` : ""}\nI understand this permanently removes my study sets, sources, chats, summaries, and flashcards.\n\nThank you.`,
-    );
-    window.location.href = `mailto:irfanmehmud140@gmail.com?subject=${subject}&body=${body}`;
+    const body = encodeURIComponent(requestBody(email, reason));
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
     setSent(true);
+    setCopied(false);
   };
 
   return (
@@ -134,28 +156,50 @@ export function DeleteAccount() {
                     <CheckIcon className="h-6 w-6 text-moss" />
                   </span>
                   <h2 className="mt-4 text-[24px] font-bold tracking-tight text-ink">
-                    Request composed.
+                    Your request is ready.
                   </h2>
                   <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-7 text-muted">
-                    Your email app should have opened with a pre-filled deletion
-                    request for <strong className="font-semibold text-ink">{email.trim()}</strong>.
-                    Just press send — we’ll confirm once your account is gone,
-                    within 30 days.
+                    If no email app opened, nothing was sent — copy the
+                    pre-filled request below and send it to{" "}
+                    <a href={`mailto:${SUPPORT_EMAIL}`} className="u-link font-medium text-brand">
+                      {SUPPORT_EMAIL}
+                    </a>{" "}
+                    yourself. We will confirm within 30 days.
                   </p>
-                  <p className="mx-auto mt-3 max-w-sm text-[13.5px] leading-6 text-faint">
-                    No email app opened? Send the same details manually to{" "}
-                    <a href="mailto:irfanmehmud140@gmail.com" className="u-link font-medium text-brand">
-                      irfanmehmud140@gmail.com
-                    </a>
-                    .
+                  <label
+                    htmlFor="del-body-copy"
+                    className="mt-5 block text-left text-[13px] font-semibold text-ink"
+                  >
+                    Pre-filled request for{" "}
+                    <strong className="font-semibold">{email.trim()}</strong>
+                  </label>
+                  <textarea
+                    id="del-body-copy"
+                    readOnly
+                    rows={7}
+                    value={requestBody(email, reason)}
+                    onFocus={(e) => e.target.select()}
+                    className="mt-2 w-full rounded-lg border border-line bg-card px-4 py-3 text-left text-[13px] leading-6 text-ink-soft"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void copyBody()}
+                    className="mt-3 w-full rounded-lg border border-line bg-card px-5 py-3 text-[14px] font-semibold text-ink transition-colors hover:border-ink/30"
+                  >
+                    {copied ? "Copied to clipboard" : "Copy request text"}
+                  </button>
+                  <p className="mx-auto mt-4 max-w-sm text-[13.5px] leading-6 text-faint">
+                    Your email app may also have opened with this request
+                    pre-filled — pressing send there works too.
                   </p>
                   <button
                     type="button"
                     onClick={() => {
                       setSent(false);
                       setConfirm("");
+                      setCopied(false);
                     }}
-                    className="mt-6 rounded-lg border border-line bg-card px-5 py-3 text-[14px] font-semibold text-ink transition-colors hover:border-ink/30"
+                    className="mt-4 text-[14px] font-semibold text-brand"
                   >
                     Make another request
                   </button>

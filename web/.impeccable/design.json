@@ -1,0 +1,431 @@
+{
+    "components": [
+        {
+            "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; background: #0f172a; color: #ffffff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; padding: 10px 16px; border: none; border-radius: 999px; box-shadow: 0 1px 3px rgba(15,23,42,0.06); cursor: pointer; transition: background-color 0.18s ease; } .ds-btn-primary:hover { background: #1e293b; } .ds-btn-primary:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; } .ds-btn-primary:active { transform: translateY(1px); }",
+            "description": "Dark pill call-to-action. Header, hero store badge, mobile menu.",
+            "html": "<button class=\"ds-btn-primary\">Google Play</button>",
+            "kind": "button",
+            "name": "Primary Button",
+            "refersTo": "button-primary"
+        },
+        {
+            "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; color: #0f172a; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; padding: 14px 24px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,0.06); cursor: pointer; transition: border-color 0.18s ease, background-color 0.18s ease; } .ds-btn-secondary:hover { border-color: #94a3b8; background: #f8fafc; } .ds-btn-secondary:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }",
+            "description": "Outlined alternative action next to the primary CTA.",
+            "html": "<button class=\"ds-btn-secondary\">See how it works</button>",
+            "kind": "button",
+            "name": "Secondary Button",
+            "refersTo": "button-secondary"
+        },
+        {
+            "css": ".ds-chip { display: inline-flex; align-items: center; gap: 6px; background: #dbeafe; color: #2563eb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }",
+            "description": "Tinted proof label. Eyebrows, readiness pills, citation counts.",
+            "html": "<span class=\"ds-chip\"><span class=\"ds-chip-dot\"></span>3 sources ready</span>",
+            "kind": "chip",
+            "name": "Chip",
+            "refersTo": "chip"
+        },
+        {
+            "css": ".ds-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.04); } .ds-card-title { margin: 0 0 8px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 17px; font-weight: 700; color: #0f172a; } .ds-card-body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: #64748b; }",
+            "description": "Default white content container on paper grounds.",
+            "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Summaries on demand</p><p class=\"ds-card-body\">A clean, readable summary whenever you need one.</p></div>",
+            "kind": "card",
+            "name": "Card",
+            "refersTo": "card"
+        },
+        {
+            "css": ".ds-nav-pill { display: inline-block; background: transparent; color: #1e293b; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; padding: 8px 12px; border: none; border-radius: 999px; cursor: pointer; transition: background-color 0.18s ease, color 0.18s ease; } .ds-nav-pill:hover { background: #f1f5f9; color: #0f172a; } .ds-nav-pill:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; } .ds-nav-pill[aria-current=\"page\"] { color: #2563eb; }",
+            "description": "Desktop header navigation link with pill hover.",
+            "html": "<button class=\"ds-nav-pill\" aria-current=\"page\">Privacy</button>",
+            "kind": "nav",
+            "name": "Nav Pill",
+            "refersTo": "button-primary"
+        },
+        {
+            "css": ".ds-link { color: #2563eb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; text-decoration: underline; text-decoration-color: #bfdbfe; text-decoration-thickness: 1.5px; text-underline-offset: 3px; transition: text-decoration-color 0.18s ease, color 0.18s ease; } .ds-link:hover { color: #1d4ed8; text-decoration-color: #1d4ed8; } .ds-link:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }",
+            "description": "Editorial inline link for prose and footers.",
+            "html": "<a class=\"ds-link\" href=\"#/privacy\">privacy policy</a>",
+            "kind": "custom",
+            "name": "Editorial Link",
+            "refersTo": "link-editorial"
+        },
+        {
+            "css": ".ds-faq { border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; padding: 0 24px; } .ds-faq details { padding: 20px 0; } .ds-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; color: #0f172a; cursor: pointer; list-style: none; } .ds-faq summary::-webkit-details-marker { display: none; } .ds-faq summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; } .ds-faq-plus { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid #e2e8f0; border-radius: 999px; font-size: 16px; color: #64748b; transition: transform 0.2s ease; } .ds-faq details[open] .ds-faq-plus { transform: rotate(45deg); } .ds-faq-body { margin: 12px 0 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.75; color: #64748b; }",
+            "description": "Native disclosure row for the FAQ block. Plus rotates open.",
+            "html": "<div class=\"ds-faq\"><details><summary>What can I add as a source?<span class=\"ds-faq-plus\">+</span></summary><p class=\"ds-faq-body\">PDF documents, typed notes, and web pages.</p></details></div>",
+            "kind": "custom",
+            "name": "FAQ Item",
+            "refersTo": "card"
+        }
+    ],
+    "extensions": {
+        "breakpoints": [
+            {
+                "name": "sm",
+                "value": "640px"
+            },
+            {
+                "name": "md",
+                "value": "768px"
+            },
+            {
+                "name": "lg",
+                "value": "1024px"
+            }
+        ],
+        "colorMeta": {
+            "accent-cyan": {
+                "canonical": "#06b6d4",
+                "displayName": "Accent cyan",
+                "role": "tertiary",
+                "tonalRamp": [
+                    "#164e63",
+                    "#0e7490",
+                    "#0891b2",
+                    "#06b6d4",
+                    "#22d3ee",
+                    "#67e8f9",
+                    "#a5f3fc",
+                    "#cffafe"
+                ]
+            },
+            "accent-violet": {
+                "canonical": "#8b5cf6",
+                "displayName": "Accent violet",
+                "role": "tertiary",
+                "tonalRamp": [
+                    "#4c1d95",
+                    "#6d28d9",
+                    "#7c3aed",
+                    "#8b5cf6",
+                    "#a78bfa",
+                    "#c4b5fd",
+                    "#ddd6fe",
+                    "#ede9fe"
+                ]
+            },
+            "brand": {
+                "canonical": "#2563eb",
+                "displayName": "Brand blue",
+                "role": "primary",
+                "tonalRamp": [
+                    "#172f6b",
+                    "#1d4ed8",
+                    "#2563eb",
+                    "#3b82f6",
+                    "#60a5fa",
+                    "#93c5fd",
+                    "#bfdbfe",
+                    "#dbeafe"
+                ]
+            },
+            "brand-deep": {
+                "canonical": "#1d4ed8",
+                "displayName": "Brand blue deep",
+                "role": "primary",
+                "tonalRamp": [
+                    "#172f6b",
+                    "#1d4ed8",
+                    "#2563eb",
+                    "#3b82f6",
+                    "#60a5fa",
+                    "#93c5fd",
+                    "#bfdbfe",
+                    "#dbeafe"
+                ]
+            },
+            "brand-tint": {
+                "canonical": "#dbeafe",
+                "displayName": "Brand blue tint",
+                "role": "primary",
+                "tonalRamp": [
+                    "#172f6b",
+                    "#1d4ed8",
+                    "#2563eb",
+                    "#3b82f6",
+                    "#60a5fa",
+                    "#93c5fd",
+                    "#bfdbfe",
+                    "#dbeafe"
+                ]
+            },
+            "card": {
+                "canonical": "#ffffff",
+                "displayName": "Card white",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#f1f5f9",
+                    "#ffffff"
+                ]
+            },
+            "cream": {
+                "canonical": "#f1f5f9",
+                "displayName": "Cream",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f1f5f9"
+                ]
+            },
+            "faint": {
+                "canonical": "#94a3b8",
+                "displayName": "Faint slate",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f1f5f9"
+                ]
+            },
+            "ink": {
+                "canonical": "#0f172a",
+                "displayName": "Ink",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#334155",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0"
+                ]
+            },
+            "ink-soft": {
+                "canonical": "#1e293b",
+                "displayName": "Ink soft",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#334155",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0"
+                ]
+            },
+            "line": {
+                "canonical": "#e2e8f0",
+                "displayName": "Line",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f1f5f9"
+                ]
+            },
+            "line-soft": {
+                "canonical": "#f1f5f9",
+                "displayName": "Line soft",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f1f5f9"
+                ]
+            },
+            "moss": {
+                "canonical": "#059669",
+                "displayName": "Moss green",
+                "role": "secondary",
+                "tonalRamp": [
+                    "#064e3b",
+                    "#047857",
+                    "#059669",
+                    "#10b981",
+                    "#34d399",
+                    "#6ee7b7",
+                    "#a7f3d0",
+                    "#ecfdf5"
+                ]
+            },
+            "moss-tint": {
+                "canonical": "#ecfdf5",
+                "displayName": "Moss green tint",
+                "role": "secondary",
+                "tonalRamp": [
+                    "#064e3b",
+                    "#047857",
+                    "#059669",
+                    "#10b981",
+                    "#34d399",
+                    "#6ee7b7",
+                    "#a7f3d0",
+                    "#ecfdf5"
+                ]
+            },
+            "muted": {
+                "canonical": "#64748b",
+                "displayName": "Muted slate",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f1f5f9"
+                ]
+            },
+            "night": {
+                "canonical": "#0f172a",
+                "displayName": "Night",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#334155",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0"
+                ]
+            },
+            "paper": {
+                "canonical": "#f8fafc",
+                "displayName": "Paper",
+                "role": "neutral",
+                "tonalRamp": [
+                    "#0f172a",
+                    "#1e293b",
+                    "#475569",
+                    "#64748b",
+                    "#94a3b8",
+                    "#cbd5e1",
+                    "#e2e8f0",
+                    "#f8fafc"
+                ]
+            }
+        },
+        "motion": [
+            {
+                "name": "reveal",
+                "purpose": "Once-only scroll entrance. Content stays readable with motion off.",
+                "value": "opacity 0.6s ease, transform 0.6s ease (translateY 14px)"
+            },
+            {
+                "name": "state-fade",
+                "purpose": "Hover and color transitions on links, buttons, nav.",
+                "value": "color 0.18s ease, background-color 0.18s ease"
+            },
+            {
+                "name": "caret-blink",
+                "purpose": "Composer mock caret. Disabled under reduced motion.",
+                "value": "opacity steps(1) 1.1s infinite"
+            }
+        ],
+        "shadows": [
+            {
+                "name": "card-lift",
+                "purpose": "Default resting shadow for white cards and panels.",
+                "value": "0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.04)"
+            },
+            {
+                "name": "hero-figure",
+                "purpose": "Home architecture and product figures only.",
+                "value": "0 24px 60px -28px rgba(22,33,58,0.35)"
+            },
+            {
+                "name": "sticky-header",
+                "purpose": "Header shadow past 8px scroll.",
+                "value": "0 1px 12px rgba(15,23,42,0.06)"
+            }
+        ],
+        "typographyMeta": {
+            "body": {
+                "displayName": "Body",
+                "purpose": "Prose and ledes near a 65ch measure."
+            },
+            "display": {
+                "displayName": "Display",
+                "purpose": "Home hero headline only."
+            },
+            "headline": {
+                "displayName": "Headline",
+                "purpose": "Section titles."
+            },
+            "label": {
+                "displayName": "Label",
+                "purpose": "Section eyebrows, headers, status pills."
+            },
+            "title": {
+                "displayName": "Title",
+                "purpose": "Card and step titles."
+            }
+        }
+    },
+    "generatedAt": "2026-09-18T00:00:00.000Z",
+    "schemaVersion": 2,
+    "title": "Design System: Stubady Web",
+    "narrative": {
+        "northStar": "The Annotated Desk",
+        "overview": "This is the public desk for a study product: paper grounds, ink text, ruled lines, and citations attached to every claim — the marketing site reads the way the product works. One confident blue carries actions and active states; one green marks trust (ready states, verified points). Nothing shouts. Sections alternate paper and white with hairline dividers, and each claim is paired with a concrete interface detail that proves it. The system serves three hash routes (home, privacy, delete-account) with one header, one footer, and shared section patterns. It is light-only, single-column-centered, and restrained throughout.",
+        "keyCharacteristics": [
+            "Paper ground, ink text, hairline borders before shadows.",
+            "A single blue for action; a single green for trust.",
+            "Citation chips and interface mock panels as proof, not decoration.",
+            "Plainspoken labels; uppercase micro-labels only as section eyebrows."
+        ],
+        "rules": [
+            {
+                "name": "The One Blue Rule",
+                "body": "Blue means clickable or active. It never decorates body copy, dividers, or backgrounds beyond its pale tint.",
+                "section": "colors"
+            },
+            {
+                "name": "The Flat-By-Default Rule",
+                "body": "Borders separate; shadows float only panels that leave the page (hero figure, modals, sticky header).",
+                "section": "colors"
+            },
+            {
+                "name": "The Eyebrow Rule",
+                "body": "One uppercase micro-label may open a section; it never appears inside cards or beside buttons.",
+                "section": "typography"
+            }
+        ],
+        "dos": [
+            "Do pair every marketing claim with an interface detail that proves it (citation chip, readiness pill, mock panel).",
+            "Do keep blue clickable-or-active and green ready-or-verified.",
+            "Do honor reduced motion (reveals resolve visible, caret stops).",
+            "Do keep one section eyebrow maximum per section."
+        ],
+        "donts": [
+            "Don't use cyan or violet outside the hero gradient headline.",
+            "Don't add shadows to resting content; borders separate.",
+            "Don't invent testimonials, metrics, pricing, or store ratings — none exist (see PRODUCT.md evidence).",
+            "Don't add form inputs styled outside the secondary-button language."
+        ]
+    }
+}

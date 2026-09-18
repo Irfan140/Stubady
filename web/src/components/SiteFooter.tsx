@@ -34,14 +34,7 @@ export function SiteFooter() {
                 </button>
               </li>
               <li>
-                <a
-                  href="https://play.google.com/store"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-colors hover:text-brand"
-                >
-                  Get the app
-                </a>
+                <span className="text-faint">Coming soon on Google Play</span>
               </li>
             </ul>
           </nav>
