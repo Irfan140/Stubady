@@ -16,7 +16,6 @@ import {
   Avatar,
   Button,
   Card,
-  Chip,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -267,10 +266,23 @@ function ContinuePanel({ setId, title }: { setId: string; title: string }) {
                 tintColor={palette.primary}
                 size={16}
               />
-              <Text style={styles.resumeText}>{resumeTarget.label}</Text>
+              <Text numberOfLines={1} style={styles.resumeText}>
+                {resumeTarget.label}
+              </Text>
             </Pressable>
           ) : null}
-          {latestSummary ? <Chip label="Summary ready" /> : null}
+          {latestSummary ? (
+            <View style={styles.resumeStatus}>
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                style={[styles.statusDot, { backgroundColor: palette.success }]}
+              />
+              <Text numberOfLines={1} style={styles.resumeStatusText}>
+                Summary ready
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -314,17 +326,46 @@ const makeStyles = (palette: Palette) =>
     },
     poolLink: { color: palette.primary, fontWeight: "700", fontSize: 14 },
     poolNote: { color: palette.muted, fontSize: 14, lineHeight: 20 },
-    resumeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    resumeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8,
+    },
     resumeChip: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 6,
       minHeight: 44,
       paddingHorizontal: 14,
       borderRadius: radius.pill,
       backgroundColor: palette.primarySoft,
+      flexShrink: 1,
     },
-    resumeText: { color: palette.primary, fontSize: 14, fontWeight: "800" },
+    resumeText: {
+      color: palette.primary,
+      fontSize: 14,
+      fontWeight: "800",
+      flexShrink: 1,
+    },
+    resumeStatus: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingHorizontal: 4,
+      flexShrink: 1,
+    },
+    statusDot: { width: 8, height: 8, borderRadius: 4 },
+    resumeStatusText: {
+      color: palette.muted,
+      fontSize: 13,
+      fontWeight: "700",
+      lineHeight: 18,
+      flexShrink: 1,
+    },
     cardTitle: { color: palette.ink, fontSize: 18, fontWeight: "800" },
     cardBody: { color: palette.muted, fontSize: 14, lineHeight: 20 },
     captureRow: { flexDirection: "row", gap: 10 },
