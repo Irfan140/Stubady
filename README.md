@@ -1,7 +1,7 @@
 # Stubady
 
 <p align="center">
-  <img src="./assets/feature graphic.png" alt="NutriSnap demo"/>
+  <img src="./assets/feature graphic.png" alt="Stubady feature graphic"/>
 </p>
 
 Stubady is an AI study companion that turns your own materials into an interactive learning experience. Upload PDFs, paste notes, or add web links and chat with an assistant that answers only from what you've provided. It is built to make revision faster, more focused, and actually personal to your content.
@@ -47,16 +47,20 @@ Stubady is an AI study companion that turns your own materials into an interacti
 - Zod
 - React Hook Form
 
+**Web**
+- Vite + React + Tailwind CSS
+- React 19
+- oxlint
+
 **Tooling**
 - TypeScript
-- ESLint + Prettier (root configs)
-- EAS Build
+- ESLint + Prettier (per package: `server/`, `mobile/`; `web/` uses oxlint, no prettier)
+- EAS Build + EAS Update
 - Docker Compose
-- GitHub Actions
 
 
 ## Architecture
 
 <p align="center">
-  <img src="./assets/architecture.png" alt="NutriSnap demo"/>
+  <img src="./assets/architecture.png" alt="Stubady architecture"/>
 </p>
