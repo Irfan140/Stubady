@@ -80,8 +80,9 @@ Before writing any Expo/EAS/React Native code:
 - State: `zustand` + `@tanstack/react-query` + `zod` + `react-hook-form`.
 - Path alias `@/*` → `mobile/src/*` (`tsconfig.json`).
 - `experiments.reactCompiler` is on in `mobile/app.config.ts` — components are auto-memoized; fix render churn at the source (subscriptions, data identity) instead of hand-memoizing.
-- Pushed screens hide the native header (`headerShown: false`) and render a custom JS back bar (`router.back()` + `SymbolView` chevron) — see `(tabs)/index.tsx`, `study-set/[id].tsx`, `study-set/[id]/{summaries,decks,conversations}.tsx`, `chat/[id].tsx`.
-- The tab bar is floating/absolute (`(tabs)/_layout.tsx`) — every tab screen must clear it with safe-area-aware bottom padding (list `paddingBottom`, FAB `bottom`), or content/buttons end up underneath it.
+- Pushed screens hide the native header (`headerShown: false`) and render a custom JS back bar (`router.back()` + `SymbolView` chevron) — see `(tabs)/index.tsx`, `study-set/[id].tsx`, `deck/[id].tsx`, `chat/[id].tsx`.
+- The tab bar is the standard Expo Router `Tabs` (`(tabs)/_layout.tsx`, surface background + 1px top border) — every tab screen must still clear it with safe-area-aware bottom padding (list `paddingBottom`, FAB `bottom`), or content/buttons end up underneath it.
+- Secondary action + status rows share one 44h baseline: filled pill = tappable action, dot + text = non-interactive status (see `resumeRow` in `(tabs)/index.tsx`). Do not put a second filled `Chip` next to the action pill — `Chip` carries `alignSelf: flex-start` and mismatched metrics.
 - OTA-safe by default: prefer JS-only changes (styles, JSX, existing deps) so updates ship via EAS Update without a rebuild. New native modules, config plugins, or `app.config.ts` changes require a new build — flag this before doing it.
 
 ## Building with EAS
@@ -89,10 +90,10 @@ Before writing any Expo/EAS/React Native code:
 ```bash
 npx --prefix mobile eas build --profile development --platform android
 npx --prefix mobile eas build --profile preview --platform android
-npx eas-cli submit / eas update   # cloud sign/submit/OTA
+npx --prefix mobile eas update   # OTA (EAS Update; updates.url in mobile/app.config.ts)
 ```
 
-Profiles in `mobile/eas.json` (development/preview/production). Secrets injected via `EXPO_PUBLIC_*` in `.github/workflows/android-build.yml`.
+Profiles in `mobile/eas.json` (development/preview/production).
 
 ## Env & secrets
 
@@ -102,7 +103,7 @@ Profiles in `mobile/eas.json` (development/preview/production). Secrets injected
 
 ## Rules
 
-- Each package owns its lint/format — `server/eslint.config.js` / `server/.prettierrc` and `mobile/eslint.config.js` / `mobile/.prettierrc` are independent (no root delegation).
+- Each package owns its lint/format — `server/eslint.config.js` / `server/.prettierrc`, `mobile/eslint.config.js` / `mobile/.prettierrc`, and `web/.oxlintrc.json` (oxlint, no prettier) are independent (no root delegation).
 - Do not use `yarn`/`pnpm add` — use `npx --prefix mobile expo install` (mobile) or `bun add` (server) and verify SDK compatibility.
 - Keep lockfiles per package (`server/bun.lock`, `mobile/package-lock.json`); do not delete.
 - For Prisma changes: edit `server/prisma/schema.prisma`, then `bun --cwd=server x prisma migrate dev` and verify `prisma generate`.
