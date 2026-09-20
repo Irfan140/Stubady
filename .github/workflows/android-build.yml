@@ -63,9 +63,8 @@ jobs:
 
       - name: Build Android locally
         env:
-          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC -Dfile.encoding=UTF-8"
-          JAVA_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1024m"
-          ORG_GRADLE_PROJECT_org.gradle.workers.max: "2"
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+          JAVA_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g"
         run: |
           eas build \
             --platform android \
