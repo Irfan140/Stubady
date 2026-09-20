@@ -62,6 +62,10 @@ jobs:
           packager: npm
 
       - name: Build Android locally
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+          JAVA_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1024m"
+          ORG_GRADLE_PROJECT_org.gradle.workers.max: "2"
         run: |
           eas build \
             --platform android \
