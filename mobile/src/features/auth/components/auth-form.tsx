@@ -58,15 +58,88 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     resolver: zodResolver(verificationSchema),
     defaultValues: { code: "" },
   });
-  const getError = (error: unknown) =>
-    error instanceof Error
-      ? error.message
-      : "Authentication failed. Please try again.";
+  const clerkMessage = (error: unknown): string => {
+    const anyErr = error as {
+      message?: string;
+      errors?: { code?: string; message?: string; longMessage?: string }[];
+      code?: string;
+    };
+    const first = anyErr?.errors?.[0];
+    const code = (first?.code ?? anyErr?.code ?? "") as string;
+    const raw = (first?.longMessage ??
+      first?.message ??
+      anyErr?.message ??
+      "") as string;
+    const lower = `${code} ${raw}`.toLowerCase();
+    if (
+      lower.includes("verification_strategy_not_valid") ||
+      lower.includes("verification strategy is not valid") ||
+      lower.includes("strategy is not valid")
+    ) {
+      return "This account was created with Google. Please use “Continue with Google” or tap “Forgot password?” to set a password for this email.";
+    }
+    if (code === "form_identifier_not_found" || lower.includes("identifier not found")) {
+      return "No account found with this email. Check the address or create a new account.";
+    }
+    if (code === "form_password_incorrect" || lower.includes("password is incorrect")) {
+      return "Incorrect password. Try again or tap “Forgot password?” to reset it.";
+    }
+    if (code === "form_password_pwned" || lower.includes("pwned")) {
+      return "This password was found in a data breach. Please choose a stronger password.";
+    }
+    if (code === "form_identifier_exists" || lower.includes("identifier exists") || lower.includes("already exists")) {
+      return "An account with this email already exists. Please sign in instead.";
+    }
+    if (raw) return raw;
+    if (error instanceof Error) return error.message;
+    return "Authentication failed. Please try again.";
+  };
+
+  const ensureFreshSignIn = async (email: string) => {
+    const s = signInState.signIn;
+    // Clerk's SignIn is a singleton. If a previous attempt (e.g. failed OAuth, stale identifier, MFA)
+    // is still cached, reusing it with a different email/strategy yields
+    // `verification_strategy_not_valid`. Reset when the identifier drifts or the
+    // status shows a non-password first factor is cached.
+    try {
+      if (s.identifier && s.identifier.toLowerCase() !== email.toLowerCase()) {
+        await s.reset();
+        return;
+      }
+      if (
+        s.status &&
+        s.status !== "complete" &&
+        s.supportedFirstFactors?.length &&
+        s.supportedFirstFactors.every((f) => f.strategy !== "password")
+      ) {
+        await s.reset();
+      }
+    } catch {
+      // reset is local-only; ignore
+    }
+  };
+
+  const ensureFreshSignUp = async (email: string) => {
+    const s = signUpState.signUp;
+    try {
+      if (
+        s.emailAddress &&
+        s.emailAddress.toLowerCase() !== email.toLowerCase()
+      ) {
+        await s.reset();
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const submit = async (values: CredentialsInput) => {
     setServerError(null);
+    // guards: Clerk signals have no isLoaded flag in Future API, but fetchStatus tells us
+    // an in-flight request is happening. Buttons are disabled via fetchStatus/fetching elsewhere.
     try {
       if (isSignUp) {
+        await ensureFreshSignUp(values.email);
         const result = await signUpState.signUp.password({
           emailAddress: values.email,
           password: values.password,
@@ -80,12 +153,31 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           router.replace("/(app)/(tabs)");
           return;
         }
-        const verification =
-          await signUpState.signUp.verifications.sendEmailCode();
-        if (verification.error) throw verification.error;
+        // needs verification (email_address unverified)
+        if (
+          signUpState.signUp.status === "missing_requirements" &&
+          signUpState.signUp.unverifiedFields.includes("email_address")
+        ) {
+          const verification =
+            await signUpState.signUp.verifications.sendEmailCode();
+          if (verification.error) throw verification.error;
+          setVerificationRequired(true);
+          return;
+        }
+        // Account already exists but password sign-up was transferable -> Clerk may want sign-in
+        if (signUpState.signUp.status === "missing_requirements") {
+          const verification =
+            await signUpState.signUp.verifications.sendEmailCode();
+          if (!verification.error) {
+            setVerificationRequired(true);
+            return;
+          }
+          throw verification.error;
+        }
         setVerificationRequired(true);
         return;
       }
+      await ensureFreshSignIn(values.email);
       const result = await signInState.signIn.password({
         emailAddress: values.email,
         password: values.password,
@@ -99,13 +191,23 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         router.replace("/(app)/(tabs)");
         return;
       }
+      if (signInState.signIn.status === "needs_second_factor") {
+        throw new Error(
+          "This account has two-step verification enabled. Please verify the second factor.",
+        );
+      }
+      if (signInState.signIn.status === "needs_new_password") {
+        throw new Error(
+          "You need to set a new password. Use “Forgot password?” to complete setup, then sign in again.",
+        );
+      }
       throw new Error(
-        "This account requires MFA, which is not enabled in this app.",
+        "Additional verification is required for this account. Please use “Forgot password?” or “Continue with Google”.",
       );
     } catch (error) {
       setFinishing(false);
       hapticError();
-      setServerError(getError(error));
+      setServerError(clerkMessage(error));
     }
   };
 
@@ -124,7 +226,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     } catch (error) {
       setFinishing(false);
       hapticError();
-      setServerError(getError(error));
+      setServerError(clerkMessage(error));
     }
   };
 
@@ -133,9 +235,10 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     try {
       const result = await signUpState.signUp.verifications.sendEmailCode();
       if (result.error) throw result.error;
+      hapticSuccess();
     } catch (error) {
       hapticError();
-      setServerError(getError(error));
+      setServerError(clerkMessage(error));
     }
   };
 
@@ -308,7 +411,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               ) : null}
               <Button
                 title={isSignUp ? "Create account" : "Sign in"}
-                loading={form.formState.isSubmitting}
+                loading={
+                  form.formState.isSubmitting ||
+                  signInState.fetchStatus === "fetching" ||
+                  signUpState.fetchStatus === "fetching"
+                }
                 onPress={form.handleSubmit(submit)}
               />
               {!isSignUp ? (

@@ -57,22 +57,72 @@ export default function ForgotPassword() {
     resolver: zodResolver(passwordSchema),
     defaultValues: { password: "" },
   });
-  const message = (value: unknown) =>
-    value instanceof Error
-      ? value.message
-      : "Password reset failed. Please try again.";
+  const message = (value: unknown) => {
+    const anyErr = value as {
+      message?: string;
+      errors?: { code?: string; message?: string; longMessage?: string }[];
+      code?: string;
+    };
+    const first = anyErr?.errors?.[0];
+    const code = (first?.code ?? anyErr?.code ?? "") as string;
+    const raw = (first?.longMessage ??
+      first?.message ??
+      anyErr?.message ??
+      "") as string;
+    const lower = `${code} ${raw}`.toLowerCase();
+    if (lower.includes("verification_strategy_not_valid") || lower.includes("verification strategy")) {
+      return "This email can’t receive a password reset code that way. If it was created with Google, use “Continue with Google” or contact support.";
+    }
+    if (code === "form_identifier_not_found" || lower.includes("identifier not found")) {
+      return "No account found with this email.";
+    }
+    if (raw) return raw;
+    if (value instanceof Error) return value.message;
+    return "Password reset failed. Please try again.";
+  };
+
+  const ensureFresh = async (email: string) => {
+    try {
+      if (signIn.identifier && signIn.identifier.toLowerCase() !== email.toLowerCase()) {
+        await signIn.reset();
+      } else if (
+        signIn.status &&
+        signIn.status !== "complete" &&
+        signIn.status !== "needs_identifier"
+      ) {
+        // stale attempt from previous sign-in/auth-form attempt – clear it
+        const needsReset =
+          signIn.supportedFirstFactors?.length === 0 ||
+          signIn.supportedFirstFactors?.every((f) => f.strategy !== "email_code");
+        if (needsReset && signIn.status !== "needs_new_password") {
+          // only reset if not already in reset-password flow
+          await signIn.reset();
+        }
+      }
+    } catch {
+      // reset is local-only; ignore
+    }
+  };
 
   const sendCode = async ({ email }: { email: string }) => {
     setError(null);
     try {
-      const created = await signIn.create({ identifier: email });
-      if (created.error) {
-        setError(message(created.error));
-        return;
+      await ensureFresh(email);
+      // Future API: create with identifier then sendCode to that identifier's first email.
+      // Keep create step for parity with current instance, but gracefully handle if
+      // signIn already holds this identifier.
+      if (!signIn.identifier || signIn.identifier.toLowerCase() !== email.toLowerCase()) {
+        const created = await signIn.create({ identifier: email });
+        if (created.error) {
+          setError(message(created.error));
+          hapticError();
+          return;
+        }
       }
       const sent = await signIn.resetPasswordEmailCode.sendCode();
       if (sent.error) {
         setError(message(sent.error));
+        hapticError();
         return;
       }
       hapticSuccess();
@@ -88,6 +138,7 @@ export default function ForgotPassword() {
       const result = await signIn.resetPasswordEmailCode.verifyCode({ code });
       if (result.error) {
         setError(message(result.error));
+        hapticError();
         return;
       }
       hapticSuccess();
@@ -106,16 +157,22 @@ export default function ForgotPassword() {
       });
       if (result.error) {
         setError(message(result.error));
+        hapticError();
         return;
       }
       if (signIn.status === "complete") {
         const finalized = await signIn.finalize();
         if (finalized.error) {
           setError(message(finalized.error));
+          hapticError();
           return;
         }
         hapticSuccess();
         router.replace("/(app)/(tabs)");
+      } else if (signIn.status === "needs_new_password") {
+        // still needs new password – stay on step, surface help
+        setError("Please choose a different password that meets the requirements.");
+        hapticError();
       }
     } catch (e) {
       hapticError();
