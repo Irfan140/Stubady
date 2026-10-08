@@ -46,8 +46,10 @@ export const sendOtpEmail = async (input: {
     text: textFor(otp, type),
   });
   if (error) {
+    // Runs inside Better Auth's background task, so throwing can't reach
+    // the client — log it; the OTP record still exists for a retry.
     logger.error({ err: error, email, type }, "failed to send OTP email");
-    throw new Error("Could not send the verification email. Try again.");
+    return;
   }
   // Keep the terminal-readable code in non-production for device testing.
   if (process.env.NODE_ENV !== "production") {

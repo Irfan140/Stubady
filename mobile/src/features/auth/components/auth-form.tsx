@@ -96,6 +96,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     if (code === "TOO_MANY_ATTEMPTS" || lower.includes("too many attempts")) {
       return "Too many tries. Request a new code and try again.";
     }
+    if (code === "EMAIL_NOT_VERIFIED" || lower.includes("not verified")) {
+      return "Please verify your email first — we’ve sent a fresh code.";
+    }
     if (raw) return raw;
     if (error instanceof Error) return error.message;
     return "Authentication failed. Please try again.";
@@ -114,7 +117,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           password: values.password,
         });
         if (error) throw error;
-        // Sign-up signs in immediately and the server sends the email OTP.
+        // Sign-up creates no session until verified; the server sends the
+        // email OTP. Verification signs in automatically.
         setVerificationEmail(email);
         setVerificationRequired(true);
         return;
@@ -123,7 +127,22 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         email,
         password: values.password,
       });
-      if (error) throw error;
+      if (error) {
+        // Signed up earlier but never verified (e.g. app was closed):
+        // send a fresh code and move to the verify screen instead of
+        // erroring out. Verification signs in via autoSignInAfterVerification.
+        if ((error as { code?: string }).code === "EMAIL_NOT_VERIFIED") {
+          const resent = await authClient.emailOtp.sendVerificationOtp({
+            email,
+            type: "email-verification",
+          });
+          if (resent.error) throw resent.error;
+          setVerificationEmail(email);
+          setVerificationRequired(true);
+          return;
+        }
+        throw error;
+      }
       setFinishing(true);
       hapticSuccess();
       router.replace("/(app)/(tabs)");

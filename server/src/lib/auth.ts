@@ -25,11 +25,17 @@ export const auth = betterAuth({
   trustedOrigins: [...new Set(trustedOrigins)],
   emailAndPassword: {
     enabled: true,
+    // Sign-up creates no session and sign-in is refused until the email
+    // is verified — verification actually gates entry.
+    requireEmailVerification: true,
   },
   emailVerification: {
     // Send an OTP (not a link) right after sign-up, matching the mobile
     // email-code UX. Delivered by Resend when configured, else logged.
     sendOnSignUp: true,
+    // Verifying signs the user in, so the app can enter straight after
+    // the code screen with no extra sign-in step.
+    autoSignInAfterVerification: true,
   },
   user: {
     deleteUser: {
