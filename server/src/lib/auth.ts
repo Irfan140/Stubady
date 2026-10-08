@@ -60,7 +60,7 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       delete: {
-        // Replaces the old Clerk `user.deleted` webhook: purge R2 objects
+        // Replaces the old `user.deleted` webhook: purge R2 objects
         // and DB rows so no orphaned data remains after account deletion.
         after: async (user) => {
           await deleteObjectsByPrefix(userStoragePrefix(user.id));
