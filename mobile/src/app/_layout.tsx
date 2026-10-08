@@ -1,5 +1,3 @@
-import { ClerkProvider, useAuth } from "@clerk/expo";
-import { tokenCache } from "@clerk/expo/token-cache";
 import {
   onlineManager,
   QueryClient,
@@ -26,8 +24,8 @@ import NetInfo from "@react-native-community/netinfo";
 import "expo-insights";
 import * as Updates from "expo-updates";
 
-import { env } from "@/config/env";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { useIsSignedIn } from "@/lib/auth-client";
 import { useTheme } from "@/stores/theme-store";
 import { radius, type, type Palette } from "@/theme";
 
@@ -42,25 +40,21 @@ onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(Boolean(state.isConnected))),
 );
 
-// Keep the native splash visible until Clerk + the router are ready, so the
-// initial "/" hop never flashes a blank screen after login. Pure JS — OTA-safe.
+// Keep the native splash visible until the session + router are ready, so
+// the initial "/" hop never flashes a blank screen after login. Pure JS —
+// OTA-safe.
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const { isDark } = useTheme();
   return (
-    <ClerkProvider
-      publishableKey={env.clerkPublishableKey}
-      tokenCache={tokenCache}
-    >
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <StatusBar style={isDark ? "light" : "dark"} />
-          <RootNavigator />
-          <UpdateBanner />
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <RootNavigator />
+        <UpdateBanner />
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -162,15 +156,15 @@ function UpdateBanner() {
 }
 
 function RootNavigator() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isSignedIn, isPending } = useIsSignedIn();
   const { palette } = useTheme();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (isLoaded) queryClient.clear();
-  }, [isLoaded, isSignedIn]);
+    if (!isPending) queryClient.clear();
+  }, [isPending, isSignedIn]);
 
-  const ready = isLoaded && navigationState?.key != null;
+  const ready = !isPending && navigationState?.key != null;
 
   useEffect(() => {
     if (ready) {

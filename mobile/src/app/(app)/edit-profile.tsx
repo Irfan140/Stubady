@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
@@ -22,6 +21,7 @@ import {
   useUiStyles,
 } from "@/components/ui";
 import { useTheme } from "@/stores/theme-store";
+import { authClient, useSessionUser } from "@/lib/auth-client";
 import type { Palette } from "@/theme";
 
 const profileSchema = z.object({
@@ -31,27 +31,31 @@ const profileSchema = z.object({
 type ProfileValues = z.infer<typeof profileSchema>;
 
 export default function EditProfile() {
-  const { user } = useUser();
+  const { user } = useSessionUser();
   const { palette } = useTheme();
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Better Auth stores a single `name`; split it for the two fields.
+  const [firstFallback, ...restName] = (user?.fullName ?? "").split(/\s+/);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     values: {
-      firstName: user?.firstName ?? "",
-      lastName: user?.lastName ?? "",
+      firstName: firstFallback ?? "",
+      lastName: restName.join(" "),
     },
   });
   const save = async (values: ProfileValues) => {
     if (!user) return;
     setSaveError(null);
     try {
-      await user.update({
-        firstName: values.firstName || null,
-        lastName: values.lastName || null,
+      const { error } = await authClient.updateUser({
+        name: [values.firstName.trim(), values.lastName.trim()]
+          .filter(Boolean)
+          .join(" "),
       });
+      if (error) throw error;
       router.back();
     } catch (error) {
       setSaveError(

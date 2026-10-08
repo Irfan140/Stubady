@@ -1,4 +1,3 @@
-import { useAuth } from "@clerk/expo";
 import {
   useInfiniteQuery,
   useMutation,
@@ -12,6 +11,7 @@ import { z } from "zod";
 
 import { AI_REQUEST_TIMEOUT_MS } from "@/constants/api.constants";
 import { apiRequest, apiStreamRequest } from "@/lib/api/client";
+import { useBearerToken } from "@/lib/auth-client";
 import {
   chatResultSchema,
   conversationSchema,
@@ -69,7 +69,7 @@ const withSourceAtFront = (
     : current;
 
 export function useStudySets() {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.sets,
     initialPageParam: null as string | null,
@@ -90,7 +90,7 @@ export function useStudySets() {
 }
 
 export function useStudySet(id: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   // The list already holds this set's id + title, so render instantly from
   // cache instead of flashing a bare loader, then confirm in background.
@@ -109,7 +109,7 @@ export function useStudySet(id: string) {
   });
 }
 export function useCreateStudySet() {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (title: string) =>
@@ -123,7 +123,7 @@ export function useCreateStudySet() {
   });
 }
 export function useUpdateStudySet(id: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (title: string) =>
@@ -140,7 +140,7 @@ export function useUpdateStudySet(id: string) {
   });
 }
 export function useDeleteStudySet() {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
@@ -150,7 +150,7 @@ export function useDeleteStudySet() {
 }
 
 export function useSources(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.sources(studySetId),
     initialPageParam: null as string | null,
@@ -183,7 +183,7 @@ export function useSources(studySetId: string) {
   };
 }
 export function useCreateSource(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (
@@ -207,7 +207,7 @@ export function useCreateSource(studySetId: string) {
   });
 }
 export function useCreatePdfUpload() {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   return useMutation({
     mutationFn: async (input: {
       studySetId: string;
@@ -224,7 +224,7 @@ export function useCreatePdfUpload() {
   });
 }
 export function useCompletePdfUpload(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (sourceId: string) =>
@@ -243,7 +243,7 @@ export function useCompletePdfUpload(studySetId: string) {
   });
 }
 export function useDeleteSource(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: (sourceId: string) =>
@@ -253,7 +253,7 @@ export function useDeleteSource(studySetId: string) {
   });
 }
 export function useRetrySource(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (sourceId: string) =>
@@ -270,7 +270,7 @@ export function useRetrySource(studySetId: string) {
 }
 
 export function useSummaries(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.summaries(studySetId),
     initialPageParam: null as string | null,
@@ -291,7 +291,7 @@ export function useSummaries(studySetId: string) {
   };
 }
 export function useGenerateSummary(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async () =>
@@ -309,7 +309,7 @@ export function useGenerateSummary(studySetId: string) {
 }
 
 export function useDeleteSummary(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: (summaryId: string) =>
@@ -324,7 +324,7 @@ export function useDeleteSummary(studySetId: string) {
 }
 
 export function useDecks(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.decks(studySetId),
     initialPageParam: null as string | null,
@@ -345,7 +345,7 @@ export function useDecks(studySetId: string) {
   };
 }
 export function useGenerateFlashcards(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (count: number) =>
@@ -362,7 +362,7 @@ export function useGenerateFlashcards(studySetId: string) {
   });
 }
 export function useDeck(studySetId: string, deckId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   return useQuery({
     queryKey: keys.deck(studySetId, deckId),
     queryFn: async () =>
@@ -377,7 +377,7 @@ export function useDeck(studySetId: string, deckId: string) {
 }
 
 export function useConversations(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.conversations(studySetId),
     initialPageParam: null as string | null,
@@ -401,7 +401,7 @@ export function useConversations(studySetId: string) {
   };
 }
 export function useConversation(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   return useMutation({
     mutationFn: async () =>
       conversationSchema.parse(
@@ -413,7 +413,7 @@ export function useConversation(studySetId: string) {
   });
 }
 export function useDeleteConversation(studySetId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
@@ -423,7 +423,7 @@ export function useDeleteConversation(studySetId: string) {
   });
 }
 export function useMessages(conversationId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const query = useInfiniteQuery({
     queryKey: keys.messages(conversationId),
     initialPageParam: null as string | null,
@@ -465,7 +465,7 @@ export type ActivityItem = {
  * endpoints (first page each). Read-only composition — no new backend.
  */
 export function useSetsActivity(sets: { id: string; title: string }[]) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const conversationQueries = useQueries({
     queries: sets.map((set) => ({
       queryKey: [...keys.conversations(set.id), "activity"] as const,
@@ -581,7 +581,7 @@ export function useSetsActivity(sets: { id: string; title: string }[]) {
 }
 
 export function useSendMessage(conversationId: string) {
-  const { getToken } = useAuth();
+  const getToken = useBearerToken();
   const client = useQueryClient();
   const [streamingReply, setStreamingReply] = useState("");
   const streamController = useRef<AbortController | null>(null);
