@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import { verifyToken } from "@clerk/express";
+import { fromNodeHeaders } from "better-auth/node";
 
-import { env } from "../config/env";
+import { auth } from "../lib/auth";
 
 const extractBearerToken = (
   header: string | string[] | undefined,
@@ -13,8 +13,10 @@ const extractBearerToken = (
 };
 
 /**
- * Verifies the Clerk session/JWT token on every request and attaches the
- * authenticated user's id to `req.userId`.
+ * Resolves the Better Auth session on every request and attaches the
+ * authenticated user's id to `req.userId`. Accepts the session cookie and
+ * `Authorization: Bearer <token>` (bearer plugin), plus the legacy
+ * `x-access-token` fallback header.
  */
 export const requireAuth = async (
   req: Request,
@@ -22,9 +24,9 @@ export const requireAuth = async (
   next: NextFunction,
 ): Promise<void> => {
   const fallback = req.headers["x-access-token"];
+  const rawFallback = typeof fallback === "string" ? fallback.trim() : "";
   const token =
-    extractBearerToken(req.headers.authorization) ??
-    (typeof fallback === "string" ? fallback.trim() : null);
+    extractBearerToken(req.headers.authorization) || rawFallback || null;
 
   if (!token) {
     res.status(401).json({ error: "Missing bearer token" });
@@ -32,11 +34,17 @@ export const requireAuth = async (
   }
 
   try {
-    const claims = await verifyToken(token, { secretKey: env.clerkSecretKey });
-    const userId = claims?.sub;
-    if (!userId) throw new Error("Token has no subject claim");
+    const headers = fromNodeHeaders(req.headers);
+    if (!headers.get("authorization") && rawFallback) {
+      headers.set("authorization", `Bearer ${rawFallback}`);
+    }
+    const session = await auth.api.getSession({ headers });
+    if (!session?.user) {
+      res.status(401).json({ error: "Invalid or expired token" });
+      return;
+    }
 
-    req.userId = userId;
+    req.userId = session.user.id;
     req.accessToken = token;
     next();
   } catch {
