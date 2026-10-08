@@ -8,6 +8,7 @@ import { useCallback } from "react";
 import { env } from "@/config/env";
 
 const BEARER_TOKEN_KEY = "stubady-bearer-token";
+const PENDING_VERIFY_KEY = "stubady-pending-verification";
 
 // Synchronous copy of the latest bearer token. SecureStore writes are
 // async, so without this a sign-in followed by an immediate API call could
@@ -54,6 +55,22 @@ export const authClient = createAuthClient({
 /** Drop-in token source for `apiRequest` (`GetToken` shape). */
 export const getBearerToken = async (): Promise<string | null> =>
   cachedBearerToken ?? SecureStore.getItemAsync(BEARER_TOKEN_KEY);
+
+/**
+ * Email awaiting verification. Persisted so the verify screen survives app
+ * restarts and trips to the email app — component state alone is wiped by
+ * both. Cleared once verification succeeds or the user backs out.
+ */
+export const getPendingVerificationEmail = (): Promise<string | null> =>
+  SecureStore.getItemAsync(PENDING_VERIFY_KEY);
+
+export const savePendingVerificationEmail = (email: string): void => {
+  void SecureStore.setItemAsync(PENDING_VERIFY_KEY, email).catch(() => {});
+};
+
+export const clearPendingVerificationEmail = (): void => {
+  void SecureStore.deleteItemAsync(PENDING_VERIFY_KEY).catch(() => {});
+};
 
 export const useBearerToken = (): (() => Promise<string | null>) =>
   useCallback(() => getBearerToken(), []);

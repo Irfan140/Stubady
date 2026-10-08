@@ -43,6 +43,13 @@ const envSchema = z
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
 
+    // Optional: when set, OTP emails go through Resend; otherwise the code
+    // is only logged (local dev). RESEND_FROM needs a verified domain in
+    // production; without it Resend's onboarding sender only delivers to
+    // the account owner's inbox.
+    RESEND_API_KEY: z.string().trim().default(""),
+    RESEND_FROM: z.string().trim().default(""),
+
     LANGSMITH_TRACING: z
       .preprocess(
         (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
@@ -100,6 +107,8 @@ export const env = {
   betterAuthUrl: parsed.data.BETTER_AUTH_URL,
   googleClientId: parsed.data.GOOGLE_CLIENT_ID,
   googleClientSecret: parsed.data.GOOGLE_CLIENT_SECRET,
+  resendApiKey: parsed.data.RESEND_API_KEY,
+  resendFrom: parsed.data.RESEND_FROM,
   langsmithTracing: parsed.data.LANGSMITH_TRACING,
   langsmithEndpoint: parsed.data.LANGSMITH_ENDPOINT,
   langsmithApiKey: parsed.data.LANGSMITH_API_KEY,
