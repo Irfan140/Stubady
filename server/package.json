@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
+    "dev:api": "bun run --watch src/index.ts",
     "dev:worker": "bun run --watch src/worker.ts",
     "start": "bun run src/index.ts",
     "start:worker": "bun run src/worker.ts",
@@ -41,12 +41,13 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1119.0",
     "@aws-sdk/s3-request-presigner": "^3.1119.0",
-    "@clerk/express": "^2.1.63",
+    "@better-auth/expo": "^1.7.7",
     "@langchain/core": "^1.2.9",
     "@langchain/langgraph": "^1.4.12",
     "@langchain/openai": "^1.5.10",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
+    "better-auth": "^1.7.7",
     "bullmq": "^6.2.2",
     "compression": "^1.8.1",
     "express": "^5.2.1",
@@ -60,7 +61,6 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "rate-limit-redis": "^6.0.1",
-    "svix": "^2.1.0",
     "tsx": "^4.23.0",
     "zod": "^4.4.3"
   }

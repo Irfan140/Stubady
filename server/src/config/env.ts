@@ -37,9 +37,11 @@ const envSchema = z
 
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
-    CLERK_SECRET_KEY: z.string().min(1),
-    CLERK_PUBLISHABLE_KEY: z.string().trim().default(""),
-    CLERK_WEBHOOK_SECRET: z.string().trim().default(""),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    BETTER_AUTH_URL: z.url(),
+
+    GOOGLE_CLIENT_ID: z.string().min(1),
+    GOOGLE_CLIENT_SECRET: z.string().min(1),
 
     LANGSMITH_TRACING: z
       .preprocess(
@@ -94,9 +96,10 @@ export const env = {
   databaseUrl: parsed.data.DATABASE_URL,
   redisUrl: parsed.data.REDIS_URL,
   logLevel: parsed.data.LOG_LEVEL,
-  clerkSecretKey: parsed.data.CLERK_SECRET_KEY,
-  clerkPublishableKey: parsed.data.CLERK_PUBLISHABLE_KEY,
-  clerkWebhookSecret: parsed.data.CLERK_WEBHOOK_SECRET,
+  betterAuthSecret: parsed.data.BETTER_AUTH_SECRET,
+  betterAuthUrl: parsed.data.BETTER_AUTH_URL,
+  googleClientId: parsed.data.GOOGLE_CLIENT_ID,
+  googleClientSecret: parsed.data.GOOGLE_CLIENT_SECRET,
   langsmithTracing: parsed.data.LANGSMITH_TRACING,
   langsmithEndpoint: parsed.data.LANGSMITH_ENDPOINT,
   langsmithApiKey: parsed.data.LANGSMITH_API_KEY,
