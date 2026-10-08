@@ -6,7 +6,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Stack, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -159,9 +159,21 @@ function RootNavigator() {
   const { isSignedIn, isPending } = useIsSignedIn();
   const { palette } = useTheme();
   const navigationState = useRootNavigationState();
+  const wasSignedIn = useRef<boolean | null>(null);
 
+  // Wipe cached API data only when the signed-in STATE flips (login or
+  // logout). Clearing on every session-object refresh cancels in-flight
+  // queries and re-shows loaders even though nothing auth-wise changed.
   useEffect(() => {
-    if (!isPending) queryClient.clear();
+    if (isPending) return;
+    if (wasSignedIn.current === null) {
+      wasSignedIn.current = isSignedIn;
+      return;
+    }
+    if (wasSignedIn.current !== isSignedIn) {
+      wasSignedIn.current = isSignedIn;
+      queryClient.clear();
+    }
   }, [isPending, isSignedIn]);
 
   const ready = !isPending && navigationState?.key != null;
