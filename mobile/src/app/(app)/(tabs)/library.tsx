@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/expo";
 import { Link, router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
@@ -23,6 +22,7 @@ import {
   useUiStyles,
 } from "@/components/ui";
 import { useSources, useStudySets } from "@/features/study/api";
+import { useSessionUser } from "@/lib/auth-client";
 import type { StudySet } from "@/features/study/types";
 import { useTheme } from "@/stores/theme-store";
 import { radius, type, type Palette } from "@/theme";
@@ -32,7 +32,7 @@ export default function Library() {
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
-  const { user } = useUser();
+  const { user } = useSessionUser();
   const query = useStudySets();
 
   if (query.isPending) return <LoadingState label="Opening your library…" />;

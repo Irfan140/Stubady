@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/expo";
 import { Link, router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
@@ -31,6 +30,7 @@ import {
   useSummaries,
 } from "@/features/study/api";
 import { hapticMedium } from "@/lib/haptics";
+import { useSessionUser } from "@/lib/auth-client";
 import { useTheme } from "@/stores/theme-store";
 import { type, radius, type Palette } from "@/theme";
 
@@ -39,7 +39,7 @@ export default function StudyHome() {
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const insets = useSafeAreaInsets();
-  const { user } = useUser();
+  const { user } = useSessionUser();
   const setsQuery = useStudySets();
 
   if (setsQuery.isPending) return <LoadingState label="Lighting your desk…" />;

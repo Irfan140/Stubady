@@ -86,8 +86,11 @@ const config: ExpoConfig = {
         },
       },
     ],
-    ["@clerk/expo"],
-    "@clerk/expo-google-signin",
+    // Native Google Sign-In (custom native code — needs a dev build, not
+    // Expo Go). Without Firebase the plugin needs the iOS URL scheme from
+    // the Google Cloud console iOS OAuth client; Android-only builds work
+    // without it.
+    ["@react-native-google-signin/google-signin"],
 
     "expo-secure-store",
   ],
@@ -104,11 +107,11 @@ const config: ExpoConfig = {
       projectId: "337168a4-5446-4f92-a8c7-e364f1e732a9",
     },
 
-    EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID:
-      process.env.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
+    EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
 
-    EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID:
-      process.env.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID,
+    EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID:
+      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   },
 
   owner: "irfan140",

@@ -1,4 +1,3 @@
-import { useClerk, useUser } from "@clerk/expo";
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
@@ -21,6 +20,7 @@ import {
   useUiStyles,
 } from "@/components/ui";
 import { hapticSelection, hapticWarning } from "@/lib/haptics";
+import { signOut, useSessionUser } from "@/lib/auth-client";
 import { useTheme, type ThemePreference } from "@/stores/theme-store";
 import { radius, type Palette } from "@/theme";
 
@@ -35,8 +35,7 @@ const APPEARANCE_OPTIONS: {
 ];
 
 export default function Settings() {
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { user } = useSessionUser();
   const { palette, preference, setPreference } = useTheme();
   const ui = useUiStyles();
   const styles = useMemo(() => makeStyles(palette), [palette]);
@@ -93,7 +92,7 @@ export default function Settings() {
             </Pressable>
           </View>
           <Text selectable style={styles.email}>
-            {user?.primaryEmailAddress?.emailAddress ?? "No email available"}
+            {user?.email ?? "No email available"}
           </Text>
         </Card>
         <Card>

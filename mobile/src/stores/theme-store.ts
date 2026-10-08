@@ -16,8 +16,8 @@ type ThemeState = {
   setPreference: (preference: ThemePreference) => void;
 };
 
-// SecureStore is already a dependency (Clerk token cache) and survives app
-// restarts, so the theme choice persists without adding AsyncStorage.
+// SecureStore is already a dependency (auth token storage) and survives
+// app restarts, so the theme choice persists without adding AsyncStorage.
 const secureStorage: StateStorage = {
   getItem: async (key) => {
     try {

@@ -1,4 +1,8 @@
-import { useSignInWithGoogle } from "@clerk/expo/google";
+import {
+  GoogleSignin,
+  isCancelledResponse,
+  isSuccessResponse,
+} from "@react-native-google-signin/google-signin";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -13,16 +17,28 @@ import {
 } from "react-native";
 
 import { hapticError, hapticLight, hapticSuccess } from "@/lib/haptics";
+import { authClient } from "@/lib/auth-client";
+import { env } from "@/config/env";
 import { useTheme } from "@/stores/theme-store";
 import { radius } from "@/theme";
 import type { Palette } from "@/theme";
+
+let googleConfigured = false;
+
+const ensureGoogleConfigured = (): boolean => {
+  if (!env.googleWebClientId) return false;
+  if (!googleConfigured) {
+    GoogleSignin.configure({ webClientId: env.googleWebClientId });
+    googleConfigured = true;
+  }
+  return true;
+};
 
 export function GoogleSignInButton({
   showDivider = true,
 }: {
   showDivider?: boolean;
 }) {
-  const { startGoogleAuthenticationFlow } = useSignInWithGoogle();
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const router = useRouter();
@@ -31,16 +47,32 @@ export function GoogleSignInButton({
   if (Platform.OS !== "ios" && Platform.OS !== "android") return null;
   const onPress = async () => {
     hapticLight();
+    if (!ensureGoogleConfigured()) {
+      Alert.alert(
+        "Google sign-in unavailable",
+        "The Google client ID is not configured in this build.",
+      );
+      return;
+    }
     setPending(true);
     try {
-      const { createdSessionId, setActive } =
-        await startGoogleAuthenticationFlow();
-      if (createdSessionId && setActive) {
-        setFinishing(true);
-        await setActive({ session: createdSessionId });
-        hapticSuccess();
-        router.replace("/(app)/(tabs)");
+      // Native account chooser; cancelled stays silent like before.
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
+      const response = await GoogleSignin.signIn();
+      if (isCancelledResponse(response)) return;
+      if (!isSuccessResponse(response) || !response.data.idToken) {
+        throw new Error("Google sign-in did not return an ID token.");
       }
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        idToken: { token: response.data.idToken },
+      });
+      if (error) throw error;
+      setFinishing(true);
+      hapticSuccess();
+      router.replace("/(app)/(tabs)");
     } catch (error) {
       setFinishing(false);
       const e = error as { code?: string; message?: string };

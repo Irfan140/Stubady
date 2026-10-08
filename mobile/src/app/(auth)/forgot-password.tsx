@@ -1,4 +1,3 @@
-import { useSignIn } from "@clerk/expo";
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, Stack, router } from "expo-router";
@@ -18,6 +17,7 @@ import { z } from "zod";
 
 import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
+import { authClient } from "@/lib/auth-client";
 import { useTheme } from "@/stores/theme-store";
 import { radius, type } from "@/theme";
 import type { Palette } from "@/theme";
@@ -41,10 +41,12 @@ export default function ForgotPassword() {
   const { palette, isDark } = useTheme();
   const ui = useUiStyles();
   const styles = React.useMemo(() => makeStyles(palette), [palette]);
-  const { signIn } = useSignIn();
   const insets = useSafeAreaInsets();
   const [step, setStep] = React.useState<Step>("email");
   const [error, setError] = React.useState<string | null>(null);
+  // Email + code travel together: the final reset call needs both.
+  const [resetEmail, setResetEmail] = React.useState("");
+  const [resetCode, setResetCode] = React.useState("");
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: "" },
@@ -58,74 +60,36 @@ export default function ForgotPassword() {
     defaultValues: { password: "" },
   });
   const message = (value: unknown) => {
-    const anyErr = value as {
-      message?: string;
-      errors?: { code?: string; message?: string; longMessage?: string }[];
-      code?: string;
-    };
-    const first = anyErr?.errors?.[0];
-    const code = (first?.code ?? anyErr?.code ?? "") as string;
-    const raw = (first?.longMessage ??
-      first?.message ??
-      anyErr?.message ??
-      "") as string;
+    const anyErr = value as { message?: string; code?: string };
+    const code = (anyErr?.code ?? "") as string;
+    const raw = (anyErr?.message ?? "") as string;
     const lower = `${code} ${raw}`.toLowerCase();
-    if (lower.includes("verification_strategy_not_valid") || lower.includes("verification strategy")) {
+    if (lower.includes("credential") || lower.includes("no password")) {
       return "This email can’t receive a password reset code that way. If it was created with Google, use “Continue with Google” or contact support.";
     }
-    if (code === "form_identifier_not_found" || lower.includes("identifier not found")) {
-      return "No account found with this email.";
+    if (
+      code === "INVALID_OTP" ||
+      code === "EXPIRED_OTP" ||
+      lower.includes("otp")
+    ) {
+      return "That code didn’t work. Check it and try again, or go back and resend.";
     }
     if (raw) return raw;
     if (value instanceof Error) return value.message;
     return "Password reset failed. Please try again.";
   };
 
-  const ensureFresh = async (email: string) => {
-    try {
-      if (signIn.identifier && signIn.identifier.toLowerCase() !== email.toLowerCase()) {
-        await signIn.reset();
-      } else if (
-        signIn.status &&
-        signIn.status !== "complete" &&
-        signIn.status !== "needs_identifier"
-      ) {
-        // stale attempt from previous sign-in/auth-form attempt – clear it
-        const needsReset =
-          signIn.supportedFirstFactors?.length === 0 ||
-          signIn.supportedFirstFactors?.every((f) => f.strategy !== "email_code");
-        if (needsReset && signIn.status !== "needs_new_password") {
-          // only reset if not already in reset-password flow
-          await signIn.reset();
-        }
-      }
-    } catch {
-      // reset is local-only; ignore
-    }
-  };
-
   const sendCode = async ({ email }: { email: string }) => {
     setError(null);
     try {
-      await ensureFresh(email);
-      // Future API: create with identifier then sendCode to that identifier's first email.
-      // Keep create step for parity with current instance, but gracefully handle if
-      // signIn already holds this identifier.
-      if (!signIn.identifier || signIn.identifier.toLowerCase() !== email.toLowerCase()) {
-        const created = await signIn.create({ identifier: email });
-        if (created.error) {
-          setError(message(created.error));
-          hapticError();
-          return;
-        }
-      }
-      const sent = await signIn.resetPasswordEmailCode.sendCode();
-      if (sent.error) {
-        setError(message(sent.error));
-        hapticError();
-        return;
-      }
+      // Unknown emails also return success (no enumeration) — the UI just
+      // moves on; only real inboxes receive a code.
+      const { error } = await authClient.emailOtp.requestPasswordReset({
+        email: email.trim(),
+      });
+      if (error) throw error;
       hapticSuccess();
+      setResetEmail(email.trim());
       setStep("code");
     } catch (e) {
       hapticError();
@@ -135,13 +99,14 @@ export default function ForgotPassword() {
   const verifyCode = async ({ code }: { code: string }) => {
     setError(null);
     try {
-      const result = await signIn.resetPasswordEmailCode.verifyCode({ code });
-      if (result.error) {
-        setError(message(result.error));
-        hapticError();
-        return;
-      }
+      const { error } = await authClient.emailOtp.checkVerificationOtp({
+        email: resetEmail,
+        type: "forget-password",
+        otp: code.trim(),
+      });
+      if (error) throw error;
       hapticSuccess();
+      setResetCode(code.trim());
       setStep("password");
     } catch (e) {
       hapticError();
@@ -151,29 +116,14 @@ export default function ForgotPassword() {
   const setPassword = async ({ password }: { password: string }) => {
     setError(null);
     try {
-      const result = await signIn.resetPasswordEmailCode.submitPassword({
+      const { error } = await authClient.emailOtp.resetPassword({
+        email: resetEmail,
+        otp: resetCode,
         password,
-        signOutOfOtherSessions: true,
       });
-      if (result.error) {
-        setError(message(result.error));
-        hapticError();
-        return;
-      }
-      if (signIn.status === "complete") {
-        const finalized = await signIn.finalize();
-        if (finalized.error) {
-          setError(message(finalized.error));
-          hapticError();
-          return;
-        }
-        hapticSuccess();
-        router.replace("/(app)/(tabs)");
-      } else if (signIn.status === "needs_new_password") {
-        // still needs new password – stay on step, surface help
-        setError("Please choose a different password that meets the requirements.");
-        hapticError();
-      }
+      if (error) throw error;
+      hapticSuccess();
+      router.replace("/(app)/(tabs)");
     } catch (e) {
       hapticError();
       setError(message(e));
