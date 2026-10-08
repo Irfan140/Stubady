@@ -1,4 +1,3 @@
-import { useSignIn, useSignUp } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
@@ -21,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
+import { authClient } from "@/lib/auth-client";
 import { useTheme } from "@/stores/theme-store";
 import { radius, type } from "@/theme";
 import type { Palette } from "@/theme";
@@ -44,9 +44,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isSignUp = mode === "sign-up";
-  const signInState = useSignIn();
-  const signUpState = useSignUp();
   const [verificationRequired, setVerificationRequired] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -58,187 +57,113 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     resolver: zodResolver(verificationSchema),
     defaultValues: { code: "" },
   });
-  const clerkMessage = (error: unknown): string => {
+  const authMessage = (error: unknown): string => {
     const anyErr = error as {
       message?: string;
-      errors?: { code?: string; message?: string; longMessage?: string }[];
       code?: string;
     };
-    const first = anyErr?.errors?.[0];
-    const code = (first?.code ?? anyErr?.code ?? "") as string;
-    const raw = (first?.longMessage ??
-      first?.message ??
-      anyErr?.message ??
-      "") as string;
+    const code = (anyErr?.code ?? "") as string;
+    const raw = (anyErr?.message ?? "") as string;
     const lower = `${code} ${raw}`.toLowerCase();
     if (
-      lower.includes("verification_strategy_not_valid") ||
-      lower.includes("verification strategy is not valid") ||
-      lower.includes("strategy is not valid")
+      lower.includes("credential") ||
+      lower.includes("password is not set") ||
+      lower.includes("no password")
     ) {
       return "This account was created with Google. Please use “Continue with Google” or tap “Forgot password?” to set a password for this email.";
     }
-    if (code === "form_identifier_not_found" || lower.includes("identifier not found")) {
-      return "No account found with this email. Check the address or create a new account.";
+    if (
+      code === "INVALID_EMAIL_OR_PASSWORD" ||
+      lower.includes("invalid email or password")
+    ) {
+      return isSignUp
+        ? "Could not create this account. Try signing in instead."
+        : "Incorrect email or password. Try again or tap “Forgot password?” to reset it.";
     }
-    if (code === "form_password_incorrect" || lower.includes("password is incorrect")) {
-      return "Incorrect password. Try again or tap “Forgot password?” to reset it.";
-    }
-    if (code === "form_password_pwned" || lower.includes("pwned")) {
-      return "This password was found in a data breach. Please choose a stronger password.";
-    }
-    if (code === "form_identifier_exists" || lower.includes("identifier exists") || lower.includes("already exists")) {
+    if (
+      code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
+      lower.includes("already exists")
+    ) {
       return "An account with this email already exists. Please sign in instead.";
+    }
+    if (
+      code === "INVALID_OTP" ||
+      code === "EXPIRED_OTP" ||
+      lower.includes("otp")
+    ) {
+      return "That code didn’t work. Check it and try again, or resend a fresh code.";
+    }
+    if (code === "TOO_MANY_ATTEMPTS" || lower.includes("too many attempts")) {
+      return "Too many tries. Request a new code and try again.";
     }
     if (raw) return raw;
     if (error instanceof Error) return error.message;
     return "Authentication failed. Please try again.";
   };
 
-  const ensureFreshSignIn = async (email: string) => {
-    const s = signInState.signIn;
-    // Clerk's SignIn is a singleton. If a previous attempt (e.g. failed OAuth, stale identifier, MFA)
-    // is still cached, reusing it with a different email/strategy yields
-    // `verification_strategy_not_valid`. Reset when the identifier drifts or the
-    // status shows a non-password first factor is cached.
-    try {
-      if (s.identifier && s.identifier.toLowerCase() !== email.toLowerCase()) {
-        await s.reset();
-        return;
-      }
-      if (
-        s.status &&
-        s.status !== "complete" &&
-        s.supportedFirstFactors?.length &&
-        s.supportedFirstFactors.every((f) => f.strategy !== "password")
-      ) {
-        await s.reset();
-      }
-    } catch {
-      // reset is local-only; ignore
-    }
-  };
-
-  const ensureFreshSignUp = async (email: string) => {
-    const s = signUpState.signUp;
-    try {
-      if (
-        s.emailAddress &&
-        s.emailAddress.toLowerCase() !== email.toLowerCase()
-      ) {
-        await s.reset();
-      }
-    } catch {
-      // ignore
-    }
-  };
-
   const submit = async (values: CredentialsInput) => {
     setServerError(null);
-    // guards: Clerk signals have no isLoaded flag in Future API, but fetchStatus tells us
-    // an in-flight request is happening. Buttons are disabled via fetchStatus/fetching elsewhere.
     try {
+      const email = values.email.trim();
       if (isSignUp) {
-        await ensureFreshSignUp(values.email);
-        const result = await signUpState.signUp.password({
-          emailAddress: values.email,
+        // The form has no name field; derive one so the UI stays unchanged.
+        const name = email.split("@")[0] || email;
+        const { error } = await authClient.signUp.email({
+          name,
+          email,
           password: values.password,
         });
-        if (result.error) throw result.error;
-        if (signUpState.signUp.status === "complete") {
-          setFinishing(true);
-          const finalized = await signUpState.signUp.finalize();
-          if (finalized.error) throw finalized.error;
-          hapticSuccess();
-          router.replace("/(app)/(tabs)");
-          return;
-        }
-        // needs verification (email_address unverified)
-        if (
-          signUpState.signUp.status === "missing_requirements" &&
-          signUpState.signUp.unverifiedFields.includes("email_address")
-        ) {
-          const verification =
-            await signUpState.signUp.verifications.sendEmailCode();
-          if (verification.error) throw verification.error;
-          setVerificationRequired(true);
-          return;
-        }
-        // Account already exists but password sign-up was transferable -> Clerk may want sign-in
-        if (signUpState.signUp.status === "missing_requirements") {
-          const verification =
-            await signUpState.signUp.verifications.sendEmailCode();
-          if (!verification.error) {
-            setVerificationRequired(true);
-            return;
-          }
-          throw verification.error;
-        }
+        if (error) throw error;
+        // Sign-up signs in immediately and the server sends the email OTP.
+        setVerificationEmail(email);
         setVerificationRequired(true);
         return;
       }
-      await ensureFreshSignIn(values.email);
-      const result = await signInState.signIn.password({
-        emailAddress: values.email,
+      const { error } = await authClient.signIn.email({
+        email,
         password: values.password,
       });
-      if (result.error) throw result.error;
-      if (signInState.signIn.status === "complete") {
-        setFinishing(true);
-        const finalized = await signInState.signIn.finalize();
-        if (finalized.error) throw finalized.error;
-        hapticSuccess();
-        router.replace("/(app)/(tabs)");
-        return;
-      }
-      if (signInState.signIn.status === "needs_second_factor") {
-        throw new Error(
-          "This account has two-step verification enabled. Please verify the second factor.",
-        );
-      }
-      if (signInState.signIn.status === "needs_new_password") {
-        throw new Error(
-          "You need to set a new password. Use “Forgot password?” to complete setup, then sign in again.",
-        );
-      }
-      throw new Error(
-        "Additional verification is required for this account. Please use “Forgot password?” or “Continue with Google”.",
-      );
+      if (error) throw error;
+      setFinishing(true);
+      hapticSuccess();
+      router.replace("/(app)/(tabs)");
     } catch (error) {
       setFinishing(false);
       hapticError();
-      setServerError(clerkMessage(error));
+      setServerError(authMessage(error));
     }
   };
 
   const verify = async ({ code }: { code: string }) => {
     setServerError(null);
     try {
-      const result = await signUpState.signUp.verifications.verifyEmailCode({
-        code,
+      const { error } = await authClient.emailOtp.verifyEmail({
+        email: verificationEmail,
+        otp: code.trim(),
       });
-      if (result.error) throw result.error;
+      if (error) throw error;
       setFinishing(true);
-      const finalized = await signUpState.signUp.finalize();
-      if (finalized.error) throw finalized.error;
       hapticSuccess();
       router.replace("/(app)/(tabs)");
     } catch (error) {
       setFinishing(false);
       hapticError();
-      setServerError(clerkMessage(error));
+      setServerError(authMessage(error));
     }
   };
 
   const resendVerification = async () => {
     setServerError(null);
     try {
-      const result = await signUpState.signUp.verifications.sendEmailCode();
-      if (result.error) throw result.error;
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: verificationEmail,
+        type: "email-verification",
+      });
+      if (error) throw error;
       hapticSuccess();
     } catch (error) {
       hapticError();
-      setServerError(clerkMessage(error));
+      setServerError(authMessage(error));
     }
   };
 
@@ -411,11 +336,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               ) : null}
               <Button
                 title={isSignUp ? "Create account" : "Sign in"}
-                loading={
-                  form.formState.isSubmitting ||
-                  signInState.fetchStatus === "fetching" ||
-                  signUpState.fetchStatus === "fetching"
-                }
+                loading={form.formState.isSubmitting}
                 onPress={form.handleSubmit(submit)}
               />
               {!isSignUp ? (
@@ -435,7 +356,6 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
             {isSignUp ? "Sign in" : "Create an account"}
           </Link>
         </Text>
-        {isSignUp ? <View nativeID="clerk-captcha" /> : null}
       </ScrollView>
       {finishing ? (
         <View style={styles.transition}>
