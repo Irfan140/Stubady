@@ -37,6 +37,11 @@ const envSchema = z
 
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
+    // Comma-separated browser origins allowed to call this API
+    // (e.g. "https://app.example.com,https://admin.example.com").
+    // Empty = no browser access. Development allows all origins.
+    CORS_ORIGINS: z.string().trim().default(""),
+
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
 
@@ -96,6 +101,10 @@ export const env = {
   databaseUrl: parsed.data.DATABASE_URL,
   redisUrl: parsed.data.REDIS_URL,
   logLevel: parsed.data.LOG_LEVEL,
+  isProduction: process.env.NODE_ENV === "production",
+  corsOrigins: parsed.data.CORS_ORIGINS.split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0),
   betterAuthSecret: parsed.data.BETTER_AUTH_SECRET,
   betterAuthUrl: parsed.data.BETTER_AUTH_URL,
   googleClientId: parsed.data.GOOGLE_CLIENT_ID,
