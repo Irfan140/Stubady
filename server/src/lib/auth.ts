@@ -11,13 +11,10 @@ import { deleteObjectsByPrefix, userStoragePrefix } from "./r2";
 
 // Native clients (Expo) have no http(s) origin, so auth relies on Bearer
 // tokens (bearer plugin) and deep-link redirects back to the app scheme.
-// CORS origins are trusted too, otherwise allowed browsers would still fail
-// the auth-endpoint origin check.
 const trustedOrigins = [
   env.betterAuthUrl,
   `http://localhost:${env.port}`,
   "mobile://",
-  ...env.corsOrigins,
 ];
 
 export const auth = betterAuth({
