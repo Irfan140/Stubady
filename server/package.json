@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
+    "dev:api": "bun run --watch src/index.ts",
     "dev:worker": "bun run --watch src/worker.ts",
     "start": "bun run src/index.ts",
     "start:worker": "bun run src/worker.ts",
