@@ -5,6 +5,7 @@ import { bearer, emailOTP } from "better-auth/plugins";
 
 import { env } from "../config/env";
 import { logger } from "../config/logger";
+import { sendOtpEmail } from "./email";
 import { deleteAllUserData } from "../repositories/users.repositories";
 import { prisma } from "./prisma";
 import { deleteObjectsByPrefix, userStoragePrefix } from "./r2";
@@ -27,7 +28,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     // Send an OTP (not a link) right after sign-up, matching the mobile
-    // email-code UX. Delivery is logged until a real email provider exists.
+    // email-code UX. Delivered by Resend when configured, else logged.
     sendOnSignUp: true,
   },
   user: {
@@ -47,13 +48,7 @@ export const auth = betterAuth({
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
-        // No email provider is wired yet: log the code so local dev and API
-        // clients can complete verification. Never log OTPs in production.
-        if (process.env.NODE_ENV === "production") {
-          logger.info({ email, type }, "issued email verification OTP");
-        } else {
-          logger.info({ email, type, otp }, "issued email verification OTP");
-        }
+        await sendOtpEmail({ email, otp, type });
       },
     }),
   ],
