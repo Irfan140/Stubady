@@ -58,7 +58,7 @@ export const getBearerToken = async (): Promise<string | null> =>
 export const useBearerToken = (): (() => Promise<string | null>) =>
   useCallback(() => getBearerToken(), []);
 
-/** Clerk-shaped session user so existing screens keep their field access. */
+/** Session user with the field names screens already use. */
 export type SessionUser = {
   fullName: string;
   firstName: string;
