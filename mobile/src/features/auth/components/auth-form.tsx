@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -20,7 +20,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, TextField, useUiStyles } from "@/components/ui";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
-import { authClient } from "@/lib/auth-client";
+import {
+  authClient,
+  clearPendingVerificationEmail,
+  getPendingVerificationEmail,
+  savePendingVerificationEmail,
+} from "@/lib/auth-client";
 import { useTheme } from "@/stores/theme-store";
 import { radius, type } from "@/theme";
 import type { Palette } from "@/theme";
@@ -49,6 +54,20 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  // A pending verification outlives this screen (app restart, email-app
+  // round trip). Restore it so the user lands back on the code step.
+  useEffect(() => {
+    let cancelled = false;
+    void getPendingVerificationEmail().then((email) => {
+      if (!cancelled && email) {
+        setVerificationEmail(email);
+        setVerificationRequired(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const form = useForm<CredentialsInput>({
     resolver: zodResolver(credentialsSchema),
     defaultValues: { email: "", password: "" },
@@ -119,6 +138,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         if (error) throw error;
         // Sign-up creates no session until verified; the server sends the
         // email OTP. Verification signs in automatically.
+        savePendingVerificationEmail(email);
         setVerificationEmail(email);
         setVerificationRequired(true);
         return;
@@ -137,6 +157,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
             type: "email-verification",
           });
           if (resent.error) throw resent.error;
+          savePendingVerificationEmail(email);
           setVerificationEmail(email);
           setVerificationRequired(true);
           return;
@@ -161,6 +182,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         otp: code.trim(),
       });
       if (error) throw error;
+      clearPendingVerificationEmail();
       setFinishing(true);
       hapticSuccess();
       router.replace("/(app)/(tabs)");
@@ -241,7 +263,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Check your email</Text>
             <Text style={ui.muted}>
-              Enter the verification code we sent to your email address.
+              Enter the verification code we sent
+              {verificationEmail ? ` to ${verificationEmail}` : ""}.
             </Text>
             <Controller
               control={verificationForm.control}
@@ -277,6 +300,17 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
                 </Text>
               </View>
             ) : null}
+            <Button
+              title="Use a different email"
+              variant="secondary"
+              onPress={() => {
+                clearPendingVerificationEmail();
+                setVerificationEmail("");
+                verificationForm.reset({ code: "" });
+                setServerError(null);
+                setVerificationRequired(false);
+              }}
+            />
           </View>
         ) : (
           <>
