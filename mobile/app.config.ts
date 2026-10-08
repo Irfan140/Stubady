@@ -1,36 +1,36 @@
 import type { ExpoConfig } from "@expo/config-types";
 
-// type Variant = 'development' | 'preview' | 'production';
+type Variant = 'development' | 'preview' | 'production';
 
-// const variant = (process.env.EAS_BUILD_PROFILE ?? 'development') as Variant;
+const variant = (process.env.EAS_BUILD_PROFILE ?? 'development') as Variant;
 
-// const variants: Record<
-//   Variant,
-//   {
-//     name: string;
-//     androidPackage: string;
-//   }
-// > = {
-//   development: {
-//     name: 'Studbady (Dev)',
-//     androidPackage: 'com.irfan140.studbady.dev',
-//   },
+const variants: Record<
+  Variant,
+  {
+    name: string;
+    androidPackage: string;
+  }
+> = {
+  development: {
+    name: 'Stubady (Dev)',
+    androidPackage: 'com.irfan140.studbady.dev',
+  },
 
-//   preview: {
-//     name: 'Studbady (Preview)',
-//     androidPackage: 'com.irfan140.studbady.preview',
-//   },
+  preview: {
+    name: 'Stubady (Preview)',
+    androidPackage: 'com.irfan140.studbady.preview',
+  },
 
-//   production: {
-//     name: 'Studbady',
-//     androidPackage: 'com.irfan140.studbady',
-//   },
-// };
+  production: {
+    name: 'Stubady',
+    androidPackage: 'com.irfan140.studbady',
+  },
+};
 
-// const v = variants[variant];
+const v = variants[variant];
 
 const config: ExpoConfig = {
-  name: "Stubady", // use v.name for production or preview build
+  name: v.name, // use v.name for production or preview build
   slug: "studbady",
   version: "1.0.0",
   orientation: "portrait",
@@ -64,7 +64,7 @@ const config: ExpoConfig = {
 
     predictiveBackGestureEnabled: false,
 
-    package: "com.irfan140.studbady",
+    package: v.androidPackage,
   },
 
   web: {
