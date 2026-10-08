@@ -1,131 +1,124 @@
 # Server Auth Verification (Better Auth — Phase 1)
 
-Manual checklist against local dev. Every item below was run and passes
-(see "Results" at the bottom).
+Manual checklist against local dev, written for the **Requestly API Client**.
+Every item below was run (via curl equivalents) and passes — see "Results"
+at the bottom.
 
-Prereqs: `docker compose up -d` (repo root, Postgres + Redis), then:
+## Prereqs
 
-```bash
-cd server
-bun run --watch src/index.ts
-```
+1. `docker compose up -d` from the repo root (Postgres + Redis).
+2. `cd server && bun run --watch src/index.ts` — leave it running; you need
+   its terminal output in step 2 (the OTP is logged there in dev only).
 
-Conventions used below (bash syntax; on Windows PowerShell write each JSON
-body to a file and pass it with `-d @file`):
+## Requestly setup
 
-```bash
-BASE=http://localhost:3000
-ORIGIN="Origin: $BASE" # POST /api/auth/* rejects requests without Origin (CSRF check)
-JAR=/tmp/ba-jar.txt    # cookie jar for the session-cookie steps
-```
-
-Use a fresh email per run (sign-up with an existing email returns 422).
+1. Create an API Client **Environment** (e.g. `stubady-local`) with:
+   - `baseUrl` = `http://localhost:3000`
+   - `token` = _(empty for now; filled in step 1/3)_
+2. Use a fresh email per run (sign-up with an existing email returns 422).
+3. Rule that applies to **every** request below: `POST {{baseUrl}}/api/auth/*`
+   endpoints reject requests without an `Origin` header (Better Auth CSRF
+   check) with `MISSING_OR_NULL_ORIGIN`. So on each auth POST, add header
+   `Origin: {{baseUrl}}` plus `Content-Type: application/json`.
+   `GET` requests and `Authorization: Bearer` calls to `/api/v1/*` do not
+   need `Origin`.
+4. Cookies: run the requests top-to-bottom in one Requestly session so the
+   `better-auth.session_token` cookie set at sign-up/sign-in is reused by
+   get-session, sign-out, and delete-user. If a cookie step ever returns
+   `null` / 401 unexpectedly, re-run sign-in, or copy the cookie from the
+   sign-in response headers into a manual `Cookie` header.
 
 ## 1. Email sign-up
 
-```bash
-curl -s -i -c $JAR -H "Content-Type: application/json" -H "$ORIGIN" \
-  -d '{"name":"Verify User","email":"verify1@example.com","password":"Testpass123!"}' \
-  $BASE/api/auth/sign-up/email
-```
-
-Expect `200` with `{ "token", "user": { "id", "emailVerified": false, ... } }`,
-a `set-auth-token: <TOKEN>` response header, and a
-`better-auth.session_token` cookie. The sign-up OTP is logged by the server
-(`issued email verification OTP` — dev only, never in production).
+- Method/URL: `POST {{baseUrl}}/api/auth/sign-up/email`
+- Headers: `Content-Type: application/json`, `Origin: {{baseUrl}}`
+- Body (JSON):
+  ```json
+  {
+    "name": "Verify User",
+    "email": "verify1@example.com",
+    "password": "Testpass123!"
+  }
+  ```
+- Expect `200` with `{ "token", "user": { "id", "emailVerified": false, … } }`,
+  a `set-auth-token` response header, and a `better-auth.session_token`
+  cookie. Copy the `set-auth-token` header value into the `{{token}}`
+  environment variable, and note the `user.id`.
+- The sign-up OTP is printed in the server terminal
+  (`issued email verification OTP` — dev only, never in production).
 
 ## 2. OTP verify
 
-Read the 6-digit `otp` from the server log, then:
+Read the 6-digit `otp` from the server terminal, then:
 
-```bash
-curl -s -H "Content-Type: application/json" \
-  -d '{"email":"verify1@example.com","otp":"<OTP_FROM_LOG>"}' \
-  $BASE/api/auth/email-otp/verify-email
-```
+- Method/URL: `POST {{baseUrl}}/api/auth/email-otp/verify-email`
+- Headers: `Content-Type: application/json`
+- Body (JSON):
+  ```json
+  { "email": "verify1@example.com", "otp": "<OTP_FROM_SERVER_LOG>" }
+  ```
+- Expect `200` with `{ "status": true, "user": { "emailVerified": true, … } }`.
 
-Expect `200` with `{ "status": true, "user": { "emailVerified": true, ... } }`.
+To re-send a code explicitly (`POST {{baseUrl}}/api/auth/email-otp/send-verification-otp`):
 
-To re-send a code explicitly:
-
-```bash
-curl -s -H "Content-Type: application/json" \
-  -d '{"email":"verify1@example.com","type":"email-verification"}' \
-  $BASE/api/auth/email-otp/send-verification-otp
+```json
+{ "email": "verify1@example.com", "type": "email-verification" }
 ```
 
 ## 3. Sign-in
 
-```bash
-curl -s -i -c $JAR -H "Content-Type: application/json" -H "$ORIGIN" \
-  -d '{"email":"verify1@example.com","password":"Testpass123!"}' \
-  $BASE/api/auth/sign-in/email
-```
-
-Expect `200` with `{ "token", "user": { "emailVerified": true, ... } }` plus a
-fresh `set-auth-token` header. Save it as `$TOKEN` for step 5.
+- Method/URL: `POST {{baseUrl}}/api/auth/sign-in/email`
+- Headers: `Content-Type: application/json`, `Origin: {{baseUrl}}`
+- Body (JSON):
+  ```json
+  { "email": "verify1@example.com", "password": "Testpass123!" }
+  ```
+- Expect `200` with `{ "token", "user": { "emailVerified": true, … } }` plus
+  a fresh `set-auth-token` header. Update `{{token}}` with the new value.
 
 ## 4. Get session (cookie)
 
-```bash
-curl -s -b $JAR $BASE/api/auth/get-session
-```
-
-Expect `200` with `{ "session": { "userId": "<id>", ... }, "user": {...} }`.
+- Method/URL: `GET {{baseUrl}}/api/auth/get-session`
+- No headers needed (session cookie is sent automatically).
+- Expect `200` with `{ "session": { "userId": "<id>", … }, "user": {…} }`.
 
 ## 5. Protected route with Bearer token
 
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/study-sets
-```
-
-Expect `200` (e.g. `{ "data": [], "nextCursor": null }`). The legacy
-`x-access-token: $TOKEN` fallback header works the same way.
+- Method/URL: `GET {{baseUrl}}/api/v1/study-sets`
+- Headers: `Authorization: Bearer {{token}}`
+- Expect `200` (e.g. `{ "data": [], "nextCursor": null }`). The legacy
+  `x-access-token: {{token}}` header works the same way.
 
 Negative cases (exact 401 bodies preserved from the old middleware):
 
-```bash
-curl -s $BASE/api/v1/study-sets
-# {"error":"Missing bearer token"}
-
-curl -s -H "Authorization: Bearer garbage" $BASE/api/v1/study-sets
-# {"error":"Invalid or expired token"}
-```
+- Same URL with no auth headers → `{"error":"Missing bearer token"}`
+- `Authorization: Bearer garbage` → `{"error":"Invalid or expired token"}`
 
 ## 6. Sign-out
 
-```bash
-curl -s -X POST -H "$ORIGIN" -b $JAR -c $JAR $BASE/api/auth/sign-out
-# {"success":true}
-
-curl -s -b $JAR $BASE/api/auth/get-session
-# null
-```
+- Method/URL: `POST {{baseUrl}}/api/auth/sign-out`
+- Headers: `Origin: {{baseUrl}}` (session cookie sent automatically).
+- Expect `{"success":true}`. Re-run step 4 → expect `null`.
 
 ## 7. Delete user (purge check)
 
-Seed one study set plus an R2 object first so the purge has something to
-remove (any protected endpoint works; study-set creation shown):
+Seed one study set first so the purge has something to remove:
 
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"title":"Purge Test Set"}' $BASE/api/v1/study-sets
-```
+- Method/URL: `POST {{baseUrl}}/api/v1/study-sets`
+- Headers: `Authorization: Bearer {{token}}`,
+  `Content-Type: application/json`
+- Body (JSON): `{ "title": "Purge Test Set" }`
 
-Sign in again for a fresh session cookie, then delete (password required):
+Sign in again (step 3) for a fresh session cookie, then delete (password
+required):
 
-```bash
-curl -s -c $JAR -H "Content-Type: application/json" -H "$ORIGIN" \
-  -d '{"email":"verify1@example.com","password":"Testpass123!"}' \
-  $BASE/api/auth/sign-in/email
+- Method/URL: `POST {{baseUrl}}/api/auth/delete-user`
+- Headers: `Content-Type: application/json`, `Origin: {{baseUrl}}`
+- Body (JSON): `{ "password": "Testpass123!" }`
+- Expect `{"success":true,"message":"User deleted"}`.
 
-curl -s -H "Content-Type: application/json" -H "$ORIGIN" -b $JAR \
-  -d '{"password":"Testpass123!"}' \
-  $BASE/api/auth/delete-user
-# {"success":true,"message":"User deleted"}
-```
-
-Confirm the purge:
+Confirm the purge (run in a terminal — these are server-side checks, not
+Requestly requests):
 
 ```bash
 # DB rows (user/session/account/study data) — expect all zeros:
@@ -157,9 +150,9 @@ Notes:
   (`Prisma schema mismatch … Missing tables`) because the generated client
   was stale; re-running `bunx --bun prisma generate` (or restarting after the
   migration, which regenerates it) fixes it. Not a code issue.
-- POST `/api/auth/*` requires an `Origin` header (Better Auth CSRF check);
-  plain curl without one gets `MISSING_OR_NULL_ORIGIN`. GETs and
-  `Authorization: Bearer` calls to `/api/v1/*` do not need it.
+- If any `POST {{baseUrl}}/api/auth/*` request returns
+  `MISSING_OR_NULL_ORIGIN`, the `Origin` header is missing — add
+  `Origin: {{baseUrl}}`.
 - Google OAuth was configured (`GOOGLE_CLIENT_ID/SECRET` validated at boot)
   but the browser redirect flow was not exercised — needs real credentials
   plus the Phase 2 mobile client.
