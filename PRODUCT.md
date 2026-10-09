@@ -30,7 +30,7 @@ Core workflow, confirmed in app and marketing copy:
 2. Add sources: PDF upload, typed/pasted notes, web link. Each source is extracted and processed in the background (queued → processing → ready/failed) via server + BullMQ worker.
 3. Study: grounded chat with streaming replies and citations, on-demand Markdown summaries, AI-generated Q&A flashcard decks, paginated conversation history.
 
-Environments: Expo native mobile app (iOS + Android, portrait, OTA via EAS Update) is the product; `web/` (Vite + React + Tailwind SPA, routes `home` / `privacy` / `delete-account`) is marketing, privacy, and delete-account only. Backend is Bun + Express 5 API with Clerk auth (Google sign-in shares name, email, profile photo only), Prisma 7 + PostgreSQL + pgvector, Redis + BullMQ ingestion, LangChain/LangGraph + OpenAI, Firecrawl for web sources, Cloudflare R2 for PDFs.
+Environments: Expo native mobile app (iOS + Android, portrait, OTA via EAS Update) is the product; `web/` (Vite + React + Tailwind SPA, routes `home` / `privacy` / `delete-account`) is marketing, privacy, and delete-account only. Backend is Bun + Express 5 API with Better Auth auth (Google sign-in shares name, email, profile photo only), Prisma 7 + PostgreSQL + pgvector, Redis + BullMQ ingestion, LangChain/LangGraph + OpenAI, Firecrawl for web sources, Cloudflare R2 for PDFs.
 
 ## Capabilities and Constraints
 

@@ -10,7 +10,7 @@ const FLOW = [
   {
     n: "02",
     title: "API validates",
-    body: "Bun + Express checks auth (Clerk JWT), Zod, rate limits.",
+    body: "Bun + Express checks auth (Better Auth session), Zod, rate limits.",
   },
   {
     n: "03",
@@ -42,8 +42,8 @@ const STACK = [
   },
   {
     title: "Authentication",
-    stack: "Clerk",
-    body: "Email and Google sign-in; every API call verifies the JWT session.",
+    stack: "Better Auth",
+    body: "Email and Google sign-in; every API call verifies the session.",
   },
   {
     title: "Backend API",
@@ -91,7 +91,7 @@ export function Architecture() {
           <p className="mt-4 max-w-2xl text-[16px] leading-7 text-muted">
             Capture on mobile, process on the backend, retrieve with RAG.
             Every layer below maps one-to-one to the system diagram — from
-            Clerk auth to BullMQ workers to pgvector search.
+            Better Auth to BullMQ workers to pgvector search.
           </p>
         </Reveal>
 
@@ -100,7 +100,7 @@ export function Architecture() {
           <figure className="mt-10 overflow-hidden rounded-2xl border border-line bg-night">
             <img
               src={archImg}
-              alt="Stubady system architecture — mobile app, Clerk auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
+              alt="Stubady system architecture — mobile app, Better Auth, Bun Express API, services, PostgreSQL plus pgvector, LangGraph plus OpenAI, BullMQ ingestion pipeline, R2 storage"
               className="h-auto w-full object-cover"
               loading="lazy"
             />
@@ -127,8 +127,8 @@ export function Architecture() {
         </Reveal>
         <Reveal>
           <p className="mx-auto mt-5 max-w-3xl text-center text-[13px] leading-6 text-faint">
-            Mobile → Backend over HTTPS (REST + SSE) · Backend ↔ Clerk over
-            JWT / session · Backend → Queue as “Create Ingestion Job” ·
+            Mobile → Backend over HTTPS (REST + SSE) · Backend ↔ Better Auth
+            over session / Bearer · Backend → Queue as “Create Ingestion Job” ·
             Worker → OpenAI for embeddings · Chat → LangGraph for
             retrieve + generate
           </p>
