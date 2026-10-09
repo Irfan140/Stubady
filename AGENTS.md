@@ -1,6 +1,6 @@
 # Stubady — Agent Guide
 
-Independent packages: `server` (Bun + Express + Prisma + pgvector/Redis/BullMQ/LangChain), `mobile` (Expo 55 + React Native + Expo Router + Clerk, Node + npm), and `web` (Vite + React + Tailwind marketing site, Bun + oxlint). No workspaces — each folder is standalone with its own package manager.
+Independent packages: `server` (Bun + Express + Prisma + pgvector/Redis/BullMQ/LangChain), `mobile` (Expo 55 + React Native + Expo Router + Better Auth, Node + npm), and `web` (Vite + React + Tailwind marketing site, Bun + oxlint). No workspaces — each folder is standalone with its own package manager.
 
 ## Project Structure — Independent Packages (No Bun Workspaces)
 
@@ -59,7 +59,7 @@ Run `bun run --cwd server lint` + `bun run --cwd server format:check`, `npm run 
 - Runtime: `Bun` + `Express 5`, API entry `server/src/index.ts` (re-exports `server/src/app.ts` for tests), worker entry `server/src/worker.ts` (BullMQ ingestion, separate process).
 - DB: Prisma 7 with `pgvector` (`vector(1536)` for `text-embedding-3-small`), datasource `postgresql` + `extensions=[vector]`. Config in `server/prisma7.config.ts`, schema `server/prisma/schema.prisma`.
 - Infra: `ioredis` + `BullMQ` (ingestion queue), `pino` + `pino-http` (redacted), `helmet`/`compression`/`express-rate-limit`+`rate-limit-redis`.
-- Auth: `@clerk/express` `verifyToken` via `requireAuth` middleware; `x-access-token` fallback supported.
+- Auth: Better Auth (`src/lib/auth.ts`, `prismaAdapter`; session cookie + `bearer` plugin). `requireAuth` resolves the session via `auth.api.getSession`, accepts `Authorization: Bearer` and the `x-access-token` fallback; purge-on-user-delete lives in `databaseHooks` (no webhooks).
 - AI: `LangChain` + `LangGraph` + `OpenAI` (chat + embeddings), `Firecrawl` for web sources, R2 (S3) for PDFs.
 - Structure: `src/config/`, `src/constants/`, `src/lib/`, `src/middlewares/`, `src/routes/`, `src/controllers/`, `src/services/`, `src/repositories/`, `src/schemas/`, `src/queues/`, `src/workers/`, `src/processors/`, `src/utils/`.
 - Env: validated with `zod` in `src/config/env.ts` (loads `.env` then `.env.development`). Never hardcode secrets — use `env.*`.
@@ -78,6 +78,7 @@ Before writing any Expo/EAS/React Native code:
 - Expo Go only has bundled natives — after adding native code, build dev client: `npx --prefix mobile expo run:android|ios` or `eas build --profile development`.
 - Prefer Expo modules over third-party libs. Check `https://docs.expo.dev/versions/latest/index.md` before adding deps.
 - State: `zustand` + `@tanstack/react-query` + `zod` + `react-hook-form`.
+- Auth: Better Auth client in `mobile/src/lib/auth-client.ts` (`expoClient` + `emailOTPClient`; Bearer token in SecureStore via `useBearerToken()` for `apiRequest`). Google sign-in is native (`@react-native-google-signin/google-signin` idToken → `signIn.social`) — needs a dev build, never Expo Go. Email verification is mandatory server-side (`requireEmailVerification`); pending verifications persist in SecureStore.
 - Path alias `@/*` → `mobile/src/*` (`tsconfig.json`).
 - `experiments.reactCompiler` is on in `mobile/app.config.ts` — components are auto-memoized; fix render churn at the source (subscriptions, data identity) instead of hand-memoizing.
 - Pushed screens hide the native header (`headerShown: false`) and render a custom JS back bar (`router.back()` + `SymbolView` chevron) — see `(tabs)/index.tsx`, `study-set/[id].tsx`, `deck/[id].tsx`, `chat/[id].tsx`.

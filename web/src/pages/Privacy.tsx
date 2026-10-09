@@ -109,7 +109,7 @@ export function Privacy() {
                     <>
                       <strong className="font-semibold text-ink">Account details.</strong>{" "}
                       Name, email address, and authentication identifiers handled through our sign-in
-                      provider (Clerk) so you can log in securely — including the name, email
+                      provider (Better Auth) so you can log in securely — including the name, email
                       address, and profile picture shared by Google when you choose “Continue with
                       Google” (see “Sign in with Google” below).
                     </>,
@@ -160,7 +160,7 @@ export function Privacy() {
                 />
                 <P>
                   Sign-in itself is handled by our authentication provider,
-                  Clerk. Google account tokens are used solely to verify your
+                  Better Auth. Google account tokens are used solely to verify your
                   identity at sign-in and are never used for any other purpose.
                 </P>
                 <P>
@@ -218,7 +218,7 @@ export function Privacy() {
                 <List
                   items={[
                     <>
-                      <strong className="font-semibold text-ink">Authentication</strong> — Clerk
+                      <strong className="font-semibold text-ink">Authentication</strong> — Better Auth
                       (sign-in, session management), with Google as the identity provider when you
                       choose “Continue with Google”.
                     </>,

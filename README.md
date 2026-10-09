@@ -32,7 +32,7 @@ Stubady is an AI study companion that turns your own materials into an interacti
 - PostgreSQL + pgvector
 - Redis + BullMQ
 - Pino
-- Clerk Auth
+- Better Auth
 - LangChain + LangGraph + OpenAI
 - Firecrawl
 - Cloudflare R2
@@ -41,7 +41,7 @@ Stubady is an AI study companion that turns your own materials into an interacti
 - Expo 55
 - React Native
 - Expo Router
-- Clerk Expo
+- Better Auth (+ native Google Sign-In)
 - TanStack Query
 - Zustand
 - Zod
